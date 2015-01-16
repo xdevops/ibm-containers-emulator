@@ -63,7 +63,7 @@ def get_container_status(container_json):
     if container_json["State"]["Paused"]:
         return "Paused"
     if container_json["State"]["ExitCode"] != 0:
-        if container_json["State"]["Error"]:
+        if "Error" in container_json["State"] and container_json["State"]["Error"]:
             return "Crashed"
         else:
             return "Shutdown"
