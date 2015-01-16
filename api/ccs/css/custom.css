@@ -1,0 +1,176 @@
+body { padding-top: 120px; }
+
+a, a:hover, a:focus {
+    color: #2c3e50;
+    cursor: hand; cursor: pointer;
+}
+
+textarea {
+    font-family: "DroidSans", "CourierNew", "Courier";
+}
+
+.main-container {
+}
+
+.navbar-default {
+    border-radius: 0;
+    margin-bottom: 0;
+}
+
+.navbar-default .navbar-text {
+  color: white;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.alert {
+  border-radius: 0;
+  padding: 8px 15px 8px 15px;
+}
+
+.alert-dismissable .close {
+  right: 0;
+}
+
+.status-line {
+  padding: 8px 15px;
+  margin-bottom: 21px;
+  list-style: none;
+  /* background-color: #ecf0f1; */
+  border-radius: 0;
+}
+.status-line > li {
+  display: inline-block;
+  padding-right: 15px;
+}
+
+.bg-danger {
+  /* background-color: #f2dede; */
+  color: #333;
+  font-weight: bold;
+}
+
+.linkpointer {
+    cursor: pointer;
+}
+
+.mar-left-10 {
+    margin-left: 10px;
+}
+
+.pad-left-5 {
+    padding-left: 5px;
+}
+
+.pad-left-10 {
+  padding-left: 10px;
+}
+
+.not-allowed {
+    cursor: not-allowed;
+}
+
+.green { color: #006400;}
+.yellow {color: #ffd700;}
+.red {color: #800000;}
+.grey {color: #66a266;}
+.blue {color: #2c3e50;}
+.white {color: white;}
+.outline {color: #b0c4de;}
+
+.big-number {
+  font-size: 2em;
+  padding: 0;
+  margin: 0;
+}
+
+.mon-status {
+  background-color: green;
+  padding: 20px 0 20px 0;
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.spend {
+  background-color: white;
+  padding: 20px 0 20px 0;
+}
+
+.traffic-heading {
+  padding: 5px;
+  background-color: #777;
+  color: #f8f8ff;
+}
+
+.traffic-body {
+  background-color: white;
+  color: black;
+}
+
+.traffic-footer {
+  padding: 5px;
+  background-color: #777;
+  color: #f8f8ff;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+}
+
+.deployment-row {
+}
+
+.slider-row {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.slider-handle {
+  height: 30px;
+  width: 30px;
+}
+
+.slider.slider-horizontal {
+  width: 100%;
+}
+
+.slider.slider-horizontal .slider-track {
+  height: 20px;
+  background-image: none;
+  background-color: lightblue;
+  /* background-image: linear-gradient(to bottom, black 0, #f5f5f5 100%); */
+}
+
+.slider-selection {
+  /* background-image: linear-gradient(to bottom, red 0, #f5f5f5 100%); */
+  background-image: none;
+  background-color: orange;
+}
+
+.panel-heading a, a:hover, a:focus {
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.field-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.scrollable-div {
+    height: 250px;
+    margin-bottom: 0;
+    overflow: auto;
+}
+
+/* this is to align row elements in different columns with h4 as used in the bootstrap css theme */
+.h4-margin {
+  margin-top: 10.5px;
+}
+
+.no-float {
+  float: none;
+}
+

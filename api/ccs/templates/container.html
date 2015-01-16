@@ -1,0 +1,76 @@
+<div id="page-container" data-bind="if: visible">
+  <div class="panel panel-primary">
+    <div class="panel-heading">
+      <!-- the media object in bootstrap 3.3 doesn't layout like we'd want so we have to reproduce it here -->
+      <div class="row">
+        <div class="col-md-1">
+          <a class="media-left" href="#">
+            <img src="http://placehold.it/64x64" alt="placeholder">
+          </a>
+        </div>
+        <div class="col-md-11">
+          <div class="col-md-6">
+            <h1 data-bind="text: name"></h>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="row deployment-row">
+        <!-- container info widget -->
+        <div class="col-md-6">
+            <div class="col-md-6 bg-container container-info">
+              <img class="center-block container-image" src="/ccs/css/images/container-icon.png" alt="container icon">
+              <p class="text-center" data-bind="text: name"></p>
+              <p>IMAGE: <span data-bind="text: image"></span></p>
+              <p>PUBLIC IP: <span data-bind="text:publicIP"></span></p>
+              <p>PRIVATE IP: <span class="text-ellipsis" data-bind="text:privateIP"></span></p>
+            </div>
+            <div class="col-md-6 bg-highlight container-info">
+              <form role="form" style="margin-top: 35px;">
+                <div class="form-group">
+                  <label for="containerTotalCPU" class="container-label">TOTAL CPU</label>
+                  <p id="containerTotalCPU" class="big-number"><span data-bind="text: cpu"></span> %</p>
+                </div>
+
+                <div class="form-group">
+                  <label for="containerTotalMemory" class="container-label">TOTAL MEMORY</label>
+                  <p class="big-number" id="containerTotalMemory">
+                    <span data-bind="text: memory"></span>
+                    <span>GB</span>
+                  </p>
+                </div>
+
+                <div class="form-group">
+                  <label for="deploymentTraffic" class="container-label">STATUS</label>
+                  <p class="big-number" id="containerState">
+                    <span class="fa fa-lg fa-check-circle" style="color: green;"></span><span class="pad-left-10" data-bind="text: state"></span>
+                  </p>
+                </div>
+              </form>
+            </div>
+        </div>
+
+        <!-- traffic widget -->
+        <div class="col-md-6">
+          <div class="col-md-12 bg-container container-info" style="border: 1px solid #777;">
+            <div class="row traffic-heading">MONITORING SUMMARY</div>
+            <div class="row traffic-body">
+              <div class="col-md-8">
+                <div id="myfirstchart" style="height: 250px;"></div>
+              </div>
+              <div class="col-md-4 mon-status" style="height: 250px;">
+                <p class="text-center big-number label-text">
+                  <span>1.3</span><br>
+                  <span>GB</span>
+                </p>
+              </div>
+            </div>
+            <div class="row traffic-footer text-center"><i class="fa fa-large fa-angle-down"></i></div>
+          </div>
+        </div>
+      </div>
+      <hr>
+    </div>
+  </div>
+</div>
