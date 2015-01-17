@@ -10,12 +10,15 @@ This document describes an API for the Docker Container Cloud based as a subset 
 We use [API Blueprint](http://apiblueprint.org/) for formatting and describing the proposed API.
 
 """
-import os, requests, json
+import os, requests, json, time
 from flask import Flask, request, Response
 from string import Template
+from threading import Thread
+from groupstore import FileGroupStore
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
 DOCKER_REMOTE_HOST=os.environ['DOCKER_REMOTE_HOST'] if 'DOCKER_REMOTE_HOST' in os.environ else 'localhost:4243'
+GROUP_STORE=FileGroupStore()
 
 HTML_TEMPLATE=\
 '''
@@ -88,7 +91,7 @@ def fixup_containers_response(containers_json):
         # container["SizeRootFs"]
         # container["SizeRw"]
 
-    return 200, json.dumps(containers_json)
+    return 200, containers_json
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
@@ -226,7 +229,7 @@ Returns a list of (running) containers.
 def get_running_containers(v):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
     status_code, response_json = fixup_containers_response(r.json()) if r.status_code == 200 else (r.status_code, r.text)
-    return get_response_text(status_code, response_json, 'containers')
+    return get_response_text(status_code, json.dumps(response_json), 'containers')
 
 """
 ## POST /{version}/containers/create{?name}
@@ -856,7 +859,8 @@ Returns a list of scaling groups
 """
 @app.route('/<v>/containers/groups', methods=['GET'])
 def list_groups(v):
-    return "[]", 200
+    groups = GROUP_STORE.list_groups()
+    return get_response_text(200, json.dumps(groups), 'groups')
 
 """
 ## POST /{version}/containers/groups/create
@@ -904,7 +908,15 @@ TODO - evaluate if I can pass tags / version info (would HEAT support that)
 """
 @app.route('/<v>/containers/groups/create', methods=['POST'])
 def create_group(v):
-    return "", 201
+    group = json.loads(request.data)
+    if "Name" not in group:
+        return "Bad parameter", 400
+    for g in GROUP_STORE.list_groups():
+        if g["Name"] == group["Name"]:
+            return "Scaling group with that name already exists", 409
+    group_id = GROUP_STORE.put_group(group)
+    response = {"Id": group_id, "Warnings":[]}
+    return json.dumps(response), 201
 
 """
 ## PUT /{version}/containers/groups/{id}
@@ -936,6 +948,21 @@ TODO - check what parameters might be updated from the HEAT template implementat
 """
 @app.route('/<v>/containers/groups/<id>', methods=['PUT'])
 def update_group(v,id):
+    new_group = json.loads(request.data)
+    group = GROUP_STORE.get_group(id)
+    if not group:
+        return "Not found", 404
+    if "Id" in new_group and new_group["Id"] != id:
+        return "Invalid Id property", 400        
+    if "NumberInstances" not in new_group or \
+       "Desired" not in new_group["NumberInstances"] or \
+       "Min" not in new_group["NumberInstances"] or \
+       "Max" not in new_group["NumberInstances"] or \
+       int(new_group["NumberInstances"]["Desired"]) < new_group["NumberInstances"]["Min"] or \
+       int(new_group["NumberInstances"]["Desired"]) > new_group["NumberInstances"]["Max"]:
+        return "Invalid NumberInstances property", 400
+    group.update(new_group)
+    GROUP_STORE.put_group(group)
     return "", 204
 
 """
@@ -958,7 +985,26 @@ Stops and deletes a scaling group.
 """
 @app.route('/<v>/containers/groups/<id>', methods=['DELETE'])
 def delete_group(v,id):
+    group = GROUP_STORE.get_group(id)
+    if not group:
+        return "Not found", 404
+    GROUP_STORE.delete_group(id)
     return "", 204
+
+def get_group_health_json(id):
+    r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json'), headers={'Accept': 'application/json'})
+    if r.status_code != 200:
+        return r.status_code, r.text
+    status_code, running_containers = fixup_containers_response(r.json())
+    if status_code != 200:
+        return status_code, running_containers
+    group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
+    response = []
+    for container in running_containers:
+        if container["Name"].startswith(group_prefix):
+            container_info = {"Name": container["Name"], "Ip": container["NetworkSettings"]["IpAddress"], "Status": container["Status"]}
+            response.append(container_info)
+    return 200, response
 
 """
 ## GET /{version}/containers/groups/{id}/health
@@ -993,11 +1039,33 @@ Returns health status for containers in group {id}
 """
 @app.route('/<v>/containers/groups/<id>/health', methods=['GET'])
 def get_group_health(v,id):
-    return "[]", 200
+    status_code, response = get_group_health_json(id)
+    return get_response_text(status_code, json.dumps(response), 'group_health')
+
+def instance_manager():
+    print "instance_manager started."
+    while True:
+        for group in GROUP_STORE.list_groups():
+            group_id = group["Id"]
+            desired_instances = int(group["NumberInstances"]["Desired"]) 
+            status_code, response = get_group_health_json(group_id)
+            if status_code == 200:
+                current_instances = len(response)
+                if desired_instances > current_instances:
+                    for i in xrange(desired_instances - current_instances):
+                        pass #TODO
+                        #CLOUD_CLIENT.create_instance(group)
+                elif desired_instances < current_instances:
+                    for i in xrange(current_instances - desired_instances):
+                        pass #TODO
+                        #CLOUD_CLIENT.delete_instances(group, False)
+        time.sleep(10)
 
 
 ### Start up code
 if __name__ == '__main__':
+    thread = Thread(target = instance_manager)
+    thread.start()
     app.run(host='0.0.0.0')
 else:
     application = app
