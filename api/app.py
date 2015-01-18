@@ -10,11 +10,55 @@ This document describes an API for the Docker Container Cloud based as a subset 
 We use [API Blueprint](http://apiblueprint.org/) for formatting and describing the proposed API.
 
 """
-import os, requests, json, time
+import os, requests, json
+import instancemgr
 from flask import Flask, request, Response
 from string import Template
-from threading import Thread
 from groupstore import FileGroupStore
+
+"""
+CCS API                                                     Docker API
+-------------------------------------------------------     ------------------------------------------------------------------------------------
+GET    /{version}/containers/json{?all,limit,size}          /containers/json
+POST   /{version}/containers/create{?name}                  /containers/create (also POST /containers/{id}/start)
+POST   /{version}/containers/{id}/start                     /containers/{id}/start
+GET    /{version}/containers/{id}/json                      /containers/(id)/json
+GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs
+POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop
+POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart
+POST   /{version}/containers/{id}/pause                     /containers/(id)/pause
+POST   /{version}/containers/{id}/unpause                   /containers/(id)/unpause
+DELETE /{version}/containers/{id}                           /containers/(id) (The container is first killed by default ???)
+
+POST   /{version}/containers/images/register                ???
+GET    /{version}/containers/images                         /images/json
+PUT    /{version}/containers/images/<id>                    ???
+DELETE /{version}/containers/images/<id>                    /images/(name) (note id vs name ???)
+
+The following have no corresponding Docker implementation
+
+POST   /{version}/containers/tokens
+
+GET    /{version}/containers/floating-ips{?all}             
+POST   /{version}/containers/{id}/floating-ips/{ip}/bind
+POST   /{version}/containers/{id}/floating-ips/{ip}/unbind
+
+GET    /{version}/containers/groups
+POST   /{version}/containers/groups/create
+PUT    /{version}/containers/groups/{id}
+DELETE /{version}/containers/groups/{id}
+GET    /{version}/containers/groups/{id}/health
+
+Problems and Incompatibilities
+
+1. Missing Names field
+2. Status field value from Docker is being overwritten
+4. When should get_container_status return "Suspended"
+5. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
+6. extensions - see fixup_containers_response
+7. note incompatible IPAddress -> IpAddress
+8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+"""
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
 DOCKER_REMOTE_HOST=os.environ['DOCKER_REMOTE_HOST'] if 'DOCKER_REMOTE_HOST' in os.environ else 'localhost:4243'
@@ -276,6 +320,7 @@ Creates and start a container. In the Docker API there are two separate APIs to 
 @app.route('/<v>/containers/create', methods=['POST'])
 def create_and_start_container(v):
     r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    #TODO: if create was successful, call /containers/{id}/start
     return r.text, r.status_code
 
 """
@@ -413,7 +458,8 @@ TODO - check if could return a stream or just plain text (deviating from current
 """
 @app.route('/<v>/containers/<id>/logs', methods=['GET'])
 def get_logs(v,id):
-    return Response("TODO", content_type='application/vnd.docker.raw-stream')
+    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
+    return get_response_text(r.status_code, r.text, 'logs')
 
 """
 ## POST /{version}/containers/{id}/stop{?t}
@@ -538,6 +584,7 @@ Deletes a container {id}. The container is first killed by default.
 """
 @app.route('/<v>/containers/<id>', methods=['DELETE'])
 def delete_container(v,id):
+    #TODO: first call /containers/{id}/kill
     r = requests.delete(get_docker_url(), headers=request.headers)
     return r.text, r.status_code
 
@@ -589,6 +636,7 @@ Register an image from docker hub or private docker registry in container cloud.
 @app.route('/<v>/containers/images/register', methods=['POST'])
 #@token_required
 def register_image(v):
+    #TODO: this isn't right ... no corresponding Docker API
     r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
     return r.text, r.status_code
 
@@ -669,7 +717,8 @@ Updates registered image. This API should be used if a new version with the same
 """
 @app.route('/<v>/containers/images/<id>', methods=['PUT'])
 def update_image_registration(v,id):
-    return "", 201
+   #TODO: how to implement ... no corresponding Docker API
+   return "", 201
 
 """
 ## DELETE /{version}/containers/images/<id>
@@ -689,6 +738,7 @@ Deletes registration for an existing registered image <id>.
 """
 @app.route('/<v>/containers/images/<id>', methods=['DELETE'])
 def unregister_image(v,id):
+    #TODO: this isn't right ... Docker API expects image name (not <id>)
     r = requests.delete(get_docker_url(), headers=request.headers)
     return r.text, r.status_code
 
@@ -988,23 +1038,9 @@ def delete_group(v,id):
     group = GROUP_STORE.get_group(id)
     if not group:
         return "Not found", 404
+    instancemgr.delete_instances(group)
     GROUP_STORE.delete_group(id)
     return "", 204
-
-def get_group_health_json(id):
-    r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json'), headers={'Accept': 'application/json'})
-    if r.status_code != 200:
-        return r.status_code, r.text
-    status_code, running_containers = fixup_containers_response(r.json())
-    if status_code != 200:
-        return status_code, running_containers
-    group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
-    response = []
-    for container in running_containers:
-        if container["Name"].startswith(group_prefix):
-            container_info = {"Name": container["Name"], "Ip": container["NetworkSettings"]["IpAddress"], "Status": container["Status"]}
-            response.append(container_info)
-    return 200, response
 
 """
 ## GET /{version}/containers/groups/{id}/health
@@ -1039,33 +1075,22 @@ Returns health status for containers in group {id}
 """
 @app.route('/<v>/containers/groups/<id>/health', methods=['GET'])
 def get_group_health(v,id):
-    status_code, response = get_group_health_json(id)
+    r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
+    if r.status_code != 200:
+        return r.status_code, r.text
+    status_code, running_containers = fixup_containers_response(r.json())
+    if status_code != 200:
+        return status_code, running_containers
+    group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
+    response = []
+    for container in running_containers:
+        if container["Name"].startswith(group_prefix):
+            container_info = {"Name": container["Name"], "Ip": container["NetworkSettings"]["IpAddress"], "Status": container["Status"]}
+            response.append(container_info)
     return get_response_text(status_code, json.dumps(response), 'group_health')
-
-def instance_manager():
-    print "instance_manager started."
-    while True:
-        for group in GROUP_STORE.list_groups():
-            group_id = group["Id"]
-            desired_instances = int(group["NumberInstances"]["Desired"]) 
-            status_code, response = get_group_health_json(group_id)
-            if status_code == 200:
-                current_instances = len(response)
-                if desired_instances > current_instances:
-                    for i in xrange(desired_instances - current_instances):
-                        pass #TODO
-                        #CLOUD_CLIENT.create_instance(group)
-                elif desired_instances < current_instances:
-                    for i in xrange(current_instances - desired_instances):
-                        pass #TODO
-                        #CLOUD_CLIENT.delete_instances(group, False)
-        time.sleep(10)
-
 
 ### Start up code
 if __name__ == '__main__':
-    thread = Thread(target = instance_manager)
-    thread.start()
     app.run(host='0.0.0.0')
 else:
     application = app
