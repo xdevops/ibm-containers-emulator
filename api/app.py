@@ -39,7 +39,7 @@ The following have no corresponding Docker implementation
 
 POST   /{version}/containers/tokens
 
-GET    /{version}/containers/floating-ips{?all}             
+GET    /{version}/containers/floating-ips{?all}
 POST   /{version}/containers/{id}/floating-ips/{ip}/bind
 POST   /{version}/containers/{id}/floating-ips/{ip}/unbind
 
@@ -74,7 +74,7 @@ HTML_TEMPLATE=\
 </head>
 <body>
     <div id="spa" style="display:none">
-        <span id="payload" resource="$resource_type">
+        <span id="payload" resource-type="$resource_type" resource-url="$resource_url">
             $json
         </span>
     </div>
@@ -85,11 +85,12 @@ HTML_TEMPLATE=\
 '''
 
 def get_response_text(status_code, response_json, resource_type):
+    resource_url = request.url
     best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
     if best == 'application/json' or status_code != 200:
         return response_json, status_code
     else:
-        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type), status_code
+        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type, resource_url=resource_url), status_code
 
 def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
@@ -123,7 +124,7 @@ def fixup_containers_response(containers_json):
         if r.status_code != 200:
             return r.status_code, r.text
         container_json = r.json()
-        
+
         # The following properties are missing or incompatible
         container["ImageId"] = container_json["Image"]
         container["Name"] = container_json["Name"][1:] if container_json["Name"].startswith("/") else container_json["Name"]
@@ -1003,7 +1004,7 @@ def update_group(v,id):
     if not group:
         return "Not found", 404
     if "Id" in new_group and new_group["Id"] != id:
-        return "Invalid Id property", 400        
+        return "Invalid Id property", 400
     if "NumberInstances" not in new_group or \
        "Desired" not in new_group["NumberInstances"] or \
        "Min" not in new_group["NumberInstances"] or \

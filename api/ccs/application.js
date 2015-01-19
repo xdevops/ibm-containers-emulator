@@ -1,9 +1,12 @@
 var onload_function = function() {
     // step 0: setup global context
     var elem = document.getElementById('payload');
+    var jso = JSON.parse(elem.innerText);
+    jso._subject = elem.getAttribute('resource-url');
+
     window.$context = {
-        resource_type: elem.getAttribute('resource'),
-        jso: JSON.parse(elem.innerText)
+        resource_type: elem.getAttribute('resource-type'),
+        jso: jso
     };
 
     // step 1: dynamically load spa template

@@ -96,7 +96,7 @@ ccs.ContainerViewModel = function() {
         var value = {state: 'UNKNOWN', icon: 'fa fa-lg fa-question-circle', style: 'black'};
         var s = self.jso.State;
 
-        if (s.Running) value = {state: 'Running', icon: 'fa fa-lf fa-check-circle', style: 'color: green'};
+        if (s.Running && !s.Paused) value = {state: 'Running', icon: 'fa fa-lf fa-check-circle', style: 'color: green'};
         else if (s.Paused) value = {state: 'Paused', icon: 'fa fa-lf fa-pause', style: 'color: yellow'};
         else if (s.Restarting) value = {state: 'Restarting', icon: 'fa fa-lf fa-spinner fa-spin', style: 'color: lightgreen'};
         else if (s.ExitCode != 0) {
@@ -104,6 +104,115 @@ ccs.ContainerViewModel = function() {
             else value = {state: 'Shutdown', icon: 'fa fa-lf fa-stop', style: 'color: black'};
         }
         return value;
+    });
+
+    // POST /{version}/containers/{id}/start
+    self.doStart = function() {
+        var url = self.jso._subject.replace('/json', '/start'); // TODO: kludge doing url synthesis
+        $.post(url, function(data, status, xhr) {
+            console.log(status);
+        });
+    };
+
+    // POST /{version}/containers/{id}/stop{?t}
+    self.doStop = function() {
+        var url = self.jso._subject.replace('/json', '/stop'); // TODO: kludge doing url synthesis
+        $.post(url, function(data, status, xhr) {
+            console.log(status);
+        });
+    };
+
+    // POST /{version}/containers/{id}/restart{?t}
+    self.doRestart = function() {
+        var url = self.jso._subject.replace('/json', '/restart'); // TODO: kludge doing url synthesis
+        $.post(url, function(data, status, xhr) {
+            console.log(status);
+        });
+    };
+
+    //POST /{version}/containers/{id}/pause
+    self.doPause = function() {
+        var url = self.jso._subject.replace('/json', '/pause'); // TODO: kludge doing url synthesis
+        $.post(url, function(data, status, xhr) {
+            console.log(status);
+        });
+    };
+
+    //POST   /{version}/containers/{id}/unpause
+    self.doUnpause = function() {
+        var url = self.jso._subject.replace('/json', '/unpause'); // TODO: kludge doing url synthesis
+        $.post(url, function(data, status, xhr) {
+            console.log(status);
+        });
+    };
+
+    //DELETE /{version}/containers/{id}
+    self.doDelete = function() {
+        var url = self.jso._subject.replace('/json', ''); // TODO: kludge doing url synthesis
+        function callback(data, status, xhr) {
+            if (status == 'nocontent') {
+                // TODO: synthesizing the containers url - fix
+                var parts = url.split('/');
+                var containers_url = parts[0] + '//' + parts[2] + '/v2/containers/json?all=1';
+                window.location = containers_url;
+            }
+        }
+
+        $.ajax({
+            url: url,
+            type: 'DELETE',
+            success: callback
+        });
+    };
+
+    self.allowedActions = ko.pureComputed(function() {
+        var actions = [];
+        var state = self.stateInfo().state;
+
+        if (state == 'Running')
+            actions = [
+                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: false},
+                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
+                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
+                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
+                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
+            ];
+        else if (state == 'UNKNOWN')
+            actions = [
+                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
+                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
+                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
+            ];
+        else if (state == 'Paused')
+            actions = [
+                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
+                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
+                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
+            ];
+        else if (state == 'Crashed')
+            actions = [
+                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
+                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
+                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
+            ];
+        else if (state == 'Shutdown')
+            actions = [
+                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
+                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
+                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
+            ];
+        else
+            ;
+
+        return actions;
     });
 
     self.init = function(jso) {

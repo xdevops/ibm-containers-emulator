@@ -10,7 +10,16 @@
         </div>
         <div class="col-md-11">
           <div class="col-md-6">
-            <h1 data-bind="text: name"></h>
+            <h1><span data-bind="text: name"></h1>
+          </div>
+          <div class="col-md-6">
+            <div class="btn-toolbar pull-right" role="toolbar">
+              <div class="btn-group">
+                <div style="margin: 2em 0;"data-bind="foreach: allowedActions">
+                  <button class="btn btn-default" data-bind="click: method, css: {disabled: enable == false}"><span data-bind="css: css"></span></button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
