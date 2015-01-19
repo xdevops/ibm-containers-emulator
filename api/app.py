@@ -11,11 +11,58 @@ We use [API Blueprint](http://apiblueprint.org/) for formatting and describing t
 
 """
 import os, requests, json
+import instancemgr
 from flask import Flask, request, Response
 from string import Template
+from groupstore import FileGroupStore
+
+"""
+CCS API                                                     Docker API
+-------------------------------------------------------     ------------------------------------------------------------------------------------
+GET    /{version}/containers/json{?all,limit,size}          /containers/json
+POST   /{version}/containers/create{?name}                  /containers/create (also POST /containers/{id}/start)
+POST   /{version}/containers/{id}/start                     /containers/{id}/start
+GET    /{version}/containers/{id}/json                      /containers/(id)/json
+GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs
+POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop
+POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart
+POST   /{version}/containers/{id}/pause                     /containers/(id)/pause
+POST   /{version}/containers/{id}/unpause                   /containers/(id)/unpause
+DELETE /{version}/containers/{id}                           /containers/(id) (The container is first killed by default ???)
+
+POST   /{version}/containers/images/register                ???
+GET    /{version}/containers/images                         /images/json
+PUT    /{version}/containers/images/<id>                    ???
+DELETE /{version}/containers/images/<id>                    /images/(name) (note id vs name ???)
+
+The following have no corresponding Docker implementation
+
+POST   /{version}/containers/tokens
+
+GET    /{version}/containers/floating-ips{?all}             
+POST   /{version}/containers/{id}/floating-ips/{ip}/bind
+POST   /{version}/containers/{id}/floating-ips/{ip}/unbind
+
+GET    /{version}/containers/groups
+POST   /{version}/containers/groups/create
+PUT    /{version}/containers/groups/{id}
+DELETE /{version}/containers/groups/{id}
+GET    /{version}/containers/groups/{id}/health
+
+Problems and Incompatibilities
+
+1. Missing Names field
+2. Status field value from Docker is being overwritten
+4. When should get_container_status return "Suspended"
+5. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
+6. extensions - see fixup_containers_response
+7. note incompatible IPAddress -> IpAddress
+8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+"""
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
 DOCKER_REMOTE_HOST=os.environ['DOCKER_REMOTE_HOST'] if 'DOCKER_REMOTE_HOST' in os.environ else 'localhost:4243'
+GROUP_STORE=FileGroupStore()
 
 HTML_TEMPLATE=\
 '''
@@ -88,7 +135,7 @@ def fixup_containers_response(containers_json):
         # container["SizeRootFs"]
         # container["SizeRw"]
 
-    return 200, json.dumps(containers_json)
+    return 200, containers_json
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
@@ -226,7 +273,7 @@ Returns a list of (running) containers.
 def get_running_containers(v):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
     status_code, response_json = fixup_containers_response(r.json()) if r.status_code == 200 else (r.status_code, r.text)
-    return get_response_text(status_code, response_json, 'containers')
+    return get_response_text(status_code, json.dumps(response_json), 'containers')
 
 """
 ## POST /{version}/containers/create{?name}
@@ -273,6 +320,7 @@ Creates and start a container. In the Docker API there are two separate APIs to 
 @app.route('/<v>/containers/create', methods=['POST'])
 def create_and_start_container(v):
     r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    #TODO: if create was successful, call /containers/{id}/start
     return r.text, r.status_code
 
 """
@@ -410,7 +458,8 @@ TODO - check if could return a stream or just plain text (deviating from current
 """
 @app.route('/<v>/containers/<id>/logs', methods=['GET'])
 def get_logs(v,id):
-    return Response("TODO", content_type='application/vnd.docker.raw-stream')
+    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
+    return get_response_text(r.status_code, r.text, 'logs')
 
 """
 ## POST /{version}/containers/{id}/stop{?t}
@@ -535,6 +584,7 @@ Deletes a container {id}. The container is first killed by default.
 """
 @app.route('/<v>/containers/<id>', methods=['DELETE'])
 def delete_container(v,id):
+    #TODO: first call /containers/{id}/kill
     r = requests.delete(get_docker_url(), headers=request.headers)
     return r.text, r.status_code
 
@@ -586,6 +636,7 @@ Register an image from docker hub or private docker registry in container cloud.
 @app.route('/<v>/containers/images/register', methods=['POST'])
 #@token_required
 def register_image(v):
+    #TODO: this isn't right ... no corresponding Docker API
     r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
     return r.text, r.status_code
 
@@ -666,7 +717,8 @@ Updates registered image. This API should be used if a new version with the same
 """
 @app.route('/<v>/containers/images/<id>', methods=['PUT'])
 def update_image_registration(v,id):
-    return "", 201
+   #TODO: how to implement ... no corresponding Docker API
+   return "", 201
 
 """
 ## DELETE /{version}/containers/images/<id>
@@ -686,6 +738,7 @@ Deletes registration for an existing registered image <id>.
 """
 @app.route('/<v>/containers/images/<id>', methods=['DELETE'])
 def unregister_image(v,id):
+    #TODO: this isn't right ... Docker API expects image name (not <id>)
     r = requests.delete(get_docker_url(), headers=request.headers)
     return r.text, r.status_code
 
@@ -856,7 +909,8 @@ Returns a list of scaling groups
 """
 @app.route('/<v>/containers/groups', methods=['GET'])
 def list_groups(v):
-    return "[]", 200
+    groups = GROUP_STORE.list_groups()
+    return get_response_text(200, json.dumps(groups), 'groups')
 
 """
 ## POST /{version}/containers/groups/create
@@ -904,7 +958,15 @@ TODO - evaluate if I can pass tags / version info (would HEAT support that)
 """
 @app.route('/<v>/containers/groups/create', methods=['POST'])
 def create_group(v):
-    return "", 201
+    group = json.loads(request.data)
+    if "Name" not in group:
+        return "Bad parameter", 400
+    for g in GROUP_STORE.list_groups():
+        if g["Name"] == group["Name"]:
+            return "Scaling group with that name already exists", 409
+    group_id = GROUP_STORE.put_group(group)
+    response = {"Id": group_id, "Warnings":[]}
+    return json.dumps(response), 201
 
 """
 ## PUT /{version}/containers/groups/{id}
@@ -936,6 +998,21 @@ TODO - check what parameters might be updated from the HEAT template implementat
 """
 @app.route('/<v>/containers/groups/<id>', methods=['PUT'])
 def update_group(v,id):
+    new_group = json.loads(request.data)
+    group = GROUP_STORE.get_group(id)
+    if not group:
+        return "Not found", 404
+    if "Id" in new_group and new_group["Id"] != id:
+        return "Invalid Id property", 400        
+    if "NumberInstances" not in new_group or \
+       "Desired" not in new_group["NumberInstances"] or \
+       "Min" not in new_group["NumberInstances"] or \
+       "Max" not in new_group["NumberInstances"] or \
+       int(new_group["NumberInstances"]["Desired"]) < new_group["NumberInstances"]["Min"] or \
+       int(new_group["NumberInstances"]["Desired"]) > new_group["NumberInstances"]["Max"]:
+        return "Invalid NumberInstances property", 400
+    group.update(new_group)
+    GROUP_STORE.put_group(group)
     return "", 204
 
 """
@@ -958,6 +1035,11 @@ Stops and deletes a scaling group.
 """
 @app.route('/<v>/containers/groups/<id>', methods=['DELETE'])
 def delete_group(v,id):
+    group = GROUP_STORE.get_group(id)
+    if not group:
+        return "Not found", 404
+    instancemgr.delete_instances(group)
+    GROUP_STORE.delete_group(id)
     return "", 204
 
 """
@@ -993,8 +1075,19 @@ Returns health status for containers in group {id}
 """
 @app.route('/<v>/containers/groups/<id>/health', methods=['GET'])
 def get_group_health(v,id):
-    return "[]", 200
-
+    r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
+    if r.status_code != 200:
+        return r.status_code, r.text
+    status_code, running_containers = fixup_containers_response(r.json())
+    if status_code != 200:
+        return status_code, running_containers
+    group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
+    response = []
+    for container in running_containers:
+        if container["Name"].startswith(group_prefix):
+            container_info = {"Name": container["Name"], "Ip": container["NetworkSettings"]["IpAddress"], "Status": container["Status"]}
+            response.append(container_info)
+    return get_response_text(status_code, json.dumps(response), 'group_health')
 
 ### Start up code
 if __name__ == '__main__':
