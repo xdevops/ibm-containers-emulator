@@ -154,13 +154,13 @@ def get_container_status(container_json):
     #    1. 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
     #    2. 'Shutdown' for stopped container (/v/container/id/stop)
     #    3. 'Crashed' for container that has exited
-    if container_json["State"]["Running"]:
-        return "Running"
     if container_json["State"]["Paused"]:
         return "Paused"
-    if container_json["State"]["OOMKilled"]: # Out Of Memory"
-        return "Crashed"
     if not container_json["State"]["Restarting"]:
+        if container_json["State"]["Running"]:
+            return "Running"
+        if container_json["State"]["OOMKilled"]: # Out Of Memory"
+            return "Crashed"
         if container_json["State"]["ExitCode"]:
             return "Crashed"
         else:
