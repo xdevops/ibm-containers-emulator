@@ -127,6 +127,7 @@ a.list-group-item:hover, a.list-group-item:focus {
 }
 
 .panel-body a:hover, .panel-body a:focus {
+    color: #2c3e50;
     font-weight: bold;
 }
 

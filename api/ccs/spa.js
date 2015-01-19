@@ -49,7 +49,7 @@ ccs.Monitor = function() {
             var datapoints = data[0].datapoints;
             var morris_data = [];
             datapoints.forEach(function(e) {
-                var mem = (e[1]/1024/1024).toPrecision(2);
+                var mem = (e[1]/1024/1024);
                 var t = e[0];
                 morris_data.push({time: t, memory: mem});
             });
@@ -65,6 +65,8 @@ ccs.Monitor = function() {
               ykeys: ['memory'],
               // Labels for the ykeys -- will be displayed when you hover over the
               // chart.
+              ymin: 1300,
+              ymax: 1500,
               labels: ['Mb']
             });
         });
@@ -90,27 +92,17 @@ ccs.ContainerViewModel = function() {
     self.privateIP = ko.observable();
     self.created = ko.observable();
 
-    self.state = ko.pureComputed(function() {
-        var value = 'UNKNOWN';
+    self.stateInfo = ko.pureComputed(function() {
+        var value = {state: 'UNKNOWN', icon: 'fa fa-lg fa-question-circle', style: 'black'};
         var s = self.jso.State;
-        if (s.Running) value = 'Running';
-        else if (s.Paused) value = 'Paused';
-        else if (s.Restarting) value = 'Restarting';
-        else if (s.Error) value = 'Crashed';
-        else if (s.ExitCode) value = 'Shutdown'
 
-        return value;
-    });
-
-    self.stateIcon = ko.pureComputed(function() {
-        var value = 'fa fa-lg fa-question-circle';
-        var s = self.jso.State;
-        if (s.Running) value = 'fa fa-lf fa-check-circle';
-        else if (s.Paused) value = 'fa fa-lf fa-pause';
-        else if (s.Restarting) value = 'fa fa-lf fa-spinner fa-spin';
-        else if (s.Error) value = 'Crashed';
-        else if (s.ExitCode) value = 'fa fa-lf fa-stop'
-
+        if (s.Running) value = {state: 'Running', icon: 'fa fa-lf fa-check-circle', style: 'color: green'};
+        else if (s.Paused) value = {state: 'Paused', icon: 'fa fa-lf fa-pause', style: 'color: yellow'};
+        else if (s.Restarting) value = {state: 'Restarting', icon: 'fa fa-lf fa-spinner fa-spin', style: 'color: lightgreen'};
+        else if (s.ExitCode != 0) {
+            if (s.Error) value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
+            else value = {state: 'Shutdown', icon: 'fa fa-lf fa-stop', style: 'color: black'};
+        }
         return value;
     });
 

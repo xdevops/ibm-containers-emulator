@@ -44,7 +44,7 @@
                 <div class="form-group">
                   <label for="deploymentTraffic" class="container-label">STATUS</label>
                   <p class="big-number" id="containerState">
-                    <span class="fa fa-lg fa-check-circle" style="color: green;"></span><span class="pad-left-10" data-bind="text: state"></span>
+                    <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span><span class="pad-left-10" data-bind="text: stateInfo().state"></span>
                   </p>
                 </div>
               </form>
