@@ -6,12 +6,12 @@ DEFAULT_STORE_DIR = '.groups'
 STORE_FILE_SUFFIX = '.json'
 
 class FileGroupStore():
-    def __init__(self, store_dir=None):
+    def __init__(self, cleanup, store_dir=None):
         if not store_dir:
             path = os.path.abspath(__file__)
             dir_path = os.path.dirname(path)
             store_dir = dir_path + '/' + DEFAULT_STORE_DIR
-        if os.path.exists(store_dir):
+        if cleanup and os.path.exists(store_dir):
             #TODO: check if there are corresponding containers and if so, don't delete the groups
             shutil.rmtree(store_dir)
         self.store_dir = store_dir
