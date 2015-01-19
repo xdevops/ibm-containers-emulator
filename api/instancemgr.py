@@ -80,7 +80,7 @@ def delete_instances(group, stop_all=True):
             break
 
 if __name__ == '__main__':
-    GROUP_STORE=FileGroupStore()
+    GROUP_STORE=FileGroupStore(False)
     print "instance_manager started."
     while True:
         for group in GROUP_STORE.list_groups():

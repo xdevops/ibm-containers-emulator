@@ -11,10 +11,10 @@ We use [API Blueprint](http://apiblueprint.org/) for formatting and describing t
 
 """
 import os, requests, json
-import instancemgr
 from flask import Flask, request, Response
 from string import Template
 from groupstore import FileGroupStore
+from instancemgr import DOCKER_REMOTE_HOST, delete_instances
 
 """
 CCS API                                                     Docker API
@@ -57,12 +57,12 @@ Problems and Incompatibilities
 5. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
 6. extensions - see fixup_containers_response
 7. note incompatible IPAddress -> IpAddress
-8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+8. note Name field has no leading '/' character as in docker
+9. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
 """
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
-DOCKER_REMOTE_HOST=os.environ['DOCKER_REMOTE_HOST'] if 'DOCKER_REMOTE_HOST' in os.environ else 'localhost:4243'
-GROUP_STORE=FileGroupStore()
+GROUP_STORE=FileGroupStore(True)
 
 HTML_TEMPLATE=\
 '''
@@ -103,14 +103,65 @@ def get_docker_url():
         docker_path = '/'.join(path_segments[2:]) # /<v>/containers/xxx -> /containers/xxx
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
 
+"""
+bootstrap server that was killed:
+
+  "State": {
+    "Error": "",
+    "ExitCode": -1,
+    "FinishedAt": "2015-01-18T20:30:37.512283287Z",
+    "OOMKilled": false,
+    "Paused": false,
+    "Pid": 0,
+    "Restarting": false,
+    "Running": false,
+    "StartedAt": "2015-01-18T20:29:07.117411842Z"
+  },
+
+running server:
+
+  "State": {
+    "Error": "",
+    "ExitCode": 0,
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "OOMKilled": false,
+    "Paused": false,
+    "Pid": 5197,
+    "Restarting": false,
+    "Running": true,
+    "StartedAt": "2015-01-18T20:29:07.402833784Z"
+  },
+
+stopped/exited server:
+
+  "State": {
+    "Error": "",
+    "ExitCode": 0,
+    "FinishedAt": "2015-01-19T18:09:53.691721551Z",
+    "OOMKilled": false,
+    "Paused": false,
+    "Pid": 0,
+    "Restarting": false,
+    "Running": false,
+    "StartedAt": "2015-01-19T18:09:53.67503787Z"
+  },
+"""
 def get_container_status(container_json):
     # Return one of: 'Running' | 'NOSTATE' | 'Shutdown' | 'Crashed' | 'Paused' | 'Suspended'
+    # Note: 'Paused' and "Running' are clear but,
+    #  how do "docker create", "docker kill", "docker stop" and "exited container" map to 'Shutdown', 'Crashed', 'Suspended', 'NOSTATE' ?
+    #  Answers from Paulo:
+    #    1. 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
+    #    2. 'Shutdown' for stopped container (/v/container/id/stop)
+    #    3. 'Crashed' for container that has exited
     if container_json["State"]["Running"]:
         return "Running"
     if container_json["State"]["Paused"]:
         return "Paused"
-    if container_json["State"]["ExitCode"] != 0:
-        if "Error" in container_json["State"] and container_json["State"]["Error"]:
+    if container_json["State"]["OOMKilled"]: # Out Of Memory"
+        return "Crashed"
+    if not container_json["State"]["Restarting"]:
+        if container_json["State"]["ExitCode"]:
             return "Crashed"
         else:
             return "Shutdown"
@@ -1038,7 +1089,7 @@ def delete_group(v,id):
     group = GROUP_STORE.get_group(id)
     if not group:
         return "Not found", 404
-    instancemgr.delete_instances(group)
+    delete_instances(group)
     GROUP_STORE.delete_group(id)
     return "", 204
 
