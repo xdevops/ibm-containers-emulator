@@ -92,17 +92,49 @@ ccs.ContainerViewModel = function() {
     self.privateIP = ko.observable();
     self.created = ko.observable();
 
+    /*
+    FROM MOCK_CCSAPI python source:
+
+    # Return one of: 'Running' | 'NOSTATE' | 'Shutdown' | 'Crashed' | 'Paused' | 'Suspended'
+    # Note: 'Paused' and "Running' are clear but,
+    #  how do "docker create", "docker kill", "docker stop" and "exited container" map to 'Shutdown', 'Crashed', 'Suspended', 'NOSTATE' ?
+    #  Answers from Paulo:
+    #    1. 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
+    #    2. 'Shutdown' for stopped container (/v/container/id/stop)
+    #    3. 'Crashed' for container that has exited
+    if container_json["State"]["Paused"]:
+        return "Paused"
+    if not container_json["State"]["Restarting"]:
+        if container_json["State"]["Running"]:
+            return "Running"
+        if container_json["State"]["OOMKilled"]: # Out Of Memory"
+            return "Crashed"
+        if container_json["State"]["ExitCode"]:
+            return "Crashed"
+        else:
+            return "Shutdown"
+    return "NOSTATE"
+    */
     self.stateInfo = ko.pureComputed(function() {
         var value = {state: 'UNKNOWN', icon: 'fa fa-lg fa-question-circle', style: 'black'};
         var s = self.jso.State;
 
-        if (s.Running && !s.Paused) value = {state: 'Running', icon: 'fa fa-lf fa-check-circle', style: 'color: green'};
-        else if (s.Paused) value = {state: 'Paused', icon: 'fa fa-lf fa-pause', style: 'color: yellow'};
-        else if (s.Restarting) value = {state: 'Restarting', icon: 'fa fa-lf fa-spinner fa-spin', style: 'color: lightgreen'};
-        else if (s.ExitCode != 0) {
-            if (s.Error) value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
-            else value = {state: 'Shutdown', icon: 'fa fa-lf fa-stop', style: 'color: black'};
-        }
+        if (s.Paused)
+            value = {state: 'Paused', icon: 'fa fa-lf fa-pause', style: 'color: yellow'};
+        else if (!s.Restarting) {
+            if (s.Running)
+                value = {state: 'Running', icon: 'fa fa-lf fa-check-circle', style: 'color: green'};
+            else if (s.OOMKilled)
+                value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
+            else {
+                if (s.ExitCode)
+                    value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
+                else
+                    value = {state: 'Shutdown', icon: 'fa fa-lf fa-stop', style: 'color: black'};
+            }
+        } else
+            value = {state: 'Restarting', icon: 'fa fa-lf fa-spinner fa-spin', style: 'color: lightgreen'};
+
         return value;
     });
 
@@ -116,7 +148,7 @@ ccs.ContainerViewModel = function() {
 
     // POST /{version}/containers/{id}/stop{?t}
     self.doStop = function() {
-        var url = self.jso._subject.replace('/json', '/stop'); // TODO: kludge doing url synthesis
+        var url = self.jso._subject.replace('/json', '/stop?t=5'); // TODO: kludge doing url synthesis
         $.post(url, function(data, status, xhr) {
             console.log(status);
         });
@@ -188,10 +220,10 @@ ccs.ContainerViewModel = function() {
         else if (state == 'Paused')
             actions = [
                 {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
-                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
+                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
                 {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
-                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
-                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
+                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
+                {css: "pull-right fa fa-lg fa-play", method: self.doUnpause, enable: true} // UNPAUSE - not Start
             ];
         else if (state == 'Crashed')
             actions = [
