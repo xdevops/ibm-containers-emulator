@@ -14,7 +14,7 @@ import os, requests, json
 from flask import Flask, request, Response
 from string import Template
 from groupstore import FileGroupStore
-from instancemgr import DOCKER_REMOTE_HOST, delete_instances
+from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
 
 """
 CCS API                                                     Docker API
@@ -62,7 +62,12 @@ Problems and Incompatibilities
 """
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
-GROUP_STORE=FileGroupStore(True)
+GROUP_STORE=FileGroupStore(False)
+# Only reset the GROUP_STORE if we determine it is out of sync with the current docker instances
+for group in GROUP_STORE.list_groups():
+    if len(get_group_instances(group)) < group["NumberInstances"]["Min"]:
+        GROUP_STORE.reset()
+        break
 
 HTML_TEMPLATE=\
 '''
@@ -104,7 +109,7 @@ def get_docker_url():
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
 
 """
-bootstrap server that was killed:
+killed docker container:
 
   "State": {
     "Error": "",
@@ -118,7 +123,7 @@ bootstrap server that was killed:
     "StartedAt": "2015-01-18T20:29:07.117411842Z"
   },
 
-running server:
+running docker container:
 
   "State": {
     "Error": "",
@@ -131,8 +136,22 @@ running server:
     "Running": true,
     "StartedAt": "2015-01-18T20:29:07.402833784Z"
   },
+  
+paused docker container:
 
-stopped/exited server:
+  "State": {
+    "Error": "",
+    "ExitCode": 0,
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "OOMKilled": false,
+    "Paused": true,
+    "Pid": 6284,
+    "Restarting": false,
+    "Running": true,
+    "StartedAt": "2015-01-18T20:30:07.220679896Z"
+  },
+
+stopped/exited docker container:
 
   "State": {
     "Error": "",

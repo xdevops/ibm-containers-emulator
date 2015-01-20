@@ -11,10 +11,13 @@ class FileGroupStore():
             path = os.path.abspath(__file__)
             dir_path = os.path.dirname(path)
             store_dir = dir_path + '/' + DEFAULT_STORE_DIR
-        if cleanup and os.path.exists(store_dir):
-            #TODO: check if there are corresponding containers and if so, don't delete the groups
-            shutil.rmtree(store_dir)
         self.store_dir = store_dir
+        if cleanup:
+            self.reset()
+        
+    def reset(self):
+        if os.path.exists(self.store_dir):
+            shutil.rmtree(self.store_dir)
         
     def put_group(self, group):
         if 'Id' in group:
@@ -24,7 +27,7 @@ class FileGroupStore():
             group['Id'] = group_id
         file_path = self.group_id_to_file(group_id)
         directory = os.path.dirname(file_path)
-        if not os.path.exists(directory): # TODO: I think this isn't working properly????
+        if not os.path.exists(directory):
             os.makedirs(directory)
         with open(file_path, 'w') as group_file:
             json.dump(group, group_file)
@@ -90,7 +93,7 @@ if __name__ == "__main__":
           "AutoScalingPolicy" : {}
         }
         ''')
-    store = FileGroupStore()
+    store = FileGroupStore(True)
     store.put_group(testgroup1)
     store.put_group(testgroup2)
     print(json.dumps(store.list_groups()))
