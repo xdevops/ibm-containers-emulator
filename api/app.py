@@ -426,6 +426,7 @@ def create_and_start_container(v):
     r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
     if r.status_code != 201:
         app.logger.error("FAILED to create container in create_and_start_container: {0}".format(r.text))
+        app.logger.error("Request was: {0}".format(r.text))
         return r.text, r.status_code
     
     app.logger.info("Created container in create_and_start_container")
