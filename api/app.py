@@ -15,6 +15,9 @@ from flask import Flask, request, Response
 from string import Template
 from groupstore import FileGroupStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
+import logging
+import sys
+import datetime
 
 """
 CCS API                                                     Docker API
@@ -207,6 +210,23 @@ def fixup_containers_response(containers_json):
         # container["SizeRw"]
 
     return 200, containers_json
+
+def fixup_images_response(images_json):
+    app.logger.debug("REACHED fixup_images_response, images_json={0}".format(images_json))
+    
+    for image in images_json:
+        app.logger.warn("in fixup_images_response converting {0}".format(image))
+        
+        # The following properties are missing or incompatible
+        if 'Image' not in image:
+            image['Image'] = image['RepoTags'][0]
+        
+        # Docker gives 'Created' as an Int, but in CCSAPI it is a String
+        # CCSAPI usually wants things like 2014-12-01T20:36:28Z
+        # I couldn't figure out the T and Z part but this is close:
+        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).strftime('%Y-%m-%d %H:%M:%S')
+
+    return 200, images_json
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
@@ -751,10 +771,13 @@ List all available images in for a tenant in container cloud
 
 """
 # TODO should we consider adding '/json' to be consistent with container list??
-@app.route('/<v>/containers/images', methods=['GET'])
+@app.route('/<v>/containers/images/json', methods=['GET'])
 def get_images(v):
+    # TODO Something is wrong, I am only seeing two images in the response
+    # from the next line...
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    return get_response_text(r.status_code, r.text, 'images')
+    status_code, response_json = fixup_images_response(r.json()) if r.status_code == 200 else (r.status_code, r.text)
+    return get_response_text(status_code, json.dumps(response_json), 'images')
 
 """
 ## PUT /{version}/containers/images/<id>
@@ -1162,6 +1185,11 @@ def get_group_health(v,id):
 
 ### Start up code
 if __name__ == '__main__':
+    # TODO Why doesn't the following add console logging?
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setLevel(logging.DEBUG) # TODO I can't seem to see output below WARN level...
+    app.logger.addHandler(handler)
+    
     app.run(host='0.0.0.0')
 else:
     application = app
