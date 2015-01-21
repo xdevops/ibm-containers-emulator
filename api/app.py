@@ -410,9 +410,34 @@ Creates and start a container. In the Docker API there are two separate APIs to 
 
 @app.route('/<v>/containers/create', methods=['POST'])
 def create_and_start_container(v):
-    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    app.logger.debug("in create_and_start_container, request.data={0}".format(request.data))
+    
+    create_and_start_data = json.loads(request.data)
+    
+    if create_and_start_data['Memory'] == 256:
+        app.logger.debug("create_and_start_container overriding memory default")
+        create_and_start_data['Memory'] = 0
+
+    # This is something of a hack; it is a work-around for a hack Alaa did
+    # of always injecting a host if not specified...
+    if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
+        create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
+    
+    r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
+    if r.status_code != 201:
+        app.logger.error("FAILED to create container in create_and_start_container: {0}".format(r.text))
+        return r.text, r.status_code
+    
+    app.logger.info("Created container in create_and_start_container")
+    response = json.loads(r.text)
+    app.logger.warn("create_and_start_container, Docker's response={0}".format(response))
+    
+    # Fix up incompatibilities
+    if 'Warnings' in response and response['Warnings'] == None:
+        response['Warnings'] = []
+        
     #TODO: if create was successful, call /containers/{id}/start
-    return r.text, r.status_code
+    return json.dumps(response), r.status_code
 
 """
 ## POST /{version}/containers/{id}/start
