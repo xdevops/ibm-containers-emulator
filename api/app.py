@@ -19,13 +19,13 @@ from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instance
 """
 CCS API                                                     Docker API
 -------------------------------------------------------     ------------------------------------------------------------------------------------
-GET    /{version}/containers/json{?all,limit,size}          /containers/json
-POST   /{version}/containers/create{?name}                  /containers/create (also POST /containers/{id}/start)
-POST   /{version}/containers/{id}/start                     /containers/{id}/start
+GET    /{version}/containers/json{?all,limit,size}          /containers/json{?all,limit,size}
+POST   /{version}/containers/create{?name}                  /containers/create{?name} (also POST /containers/(id)/start)
+POST   /{version}/containers/{id}/start                     /containers/(id)/start
 GET    /{version}/containers/{id}/json                      /containers/(id)/json
-GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs
-POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop
-POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart
+GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs{?stdout,stderr}
+POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop{?t}
+POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart{?t}
 POST   /{version}/containers/{id}/pause                     /containers/(id)/pause
 POST   /{version}/containers/{id}/unpause                   /containers/(id)/unpause
 DELETE /{version}/containers/{id}                           /containers/(id) (The container is first killed by default ???)
@@ -53,12 +53,12 @@ Problems and Incompatibilities
 
 1. Missing Names field
 2. Status field value from Docker is being overwritten
-4. When should get_container_status return "Suspended"
-5. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
-6. extensions - see fixup_containers_response
-7. note incompatible IPAddress -> IpAddress
-8. note Name field has no leading '/' character as in docker
-9. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+3. When should get_container_status return "Suspended"
+4. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
+5. extensions - see fixup_containers_response
+6. note incompatible IPAddress -> IpAddress
+7. note Name field has no leading '/' character as in docker
+8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
 """
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
