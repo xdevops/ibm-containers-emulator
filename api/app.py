@@ -34,7 +34,7 @@ POST   /{version}/containers/{id}/unpause                   /containers/(id)/unp
 DELETE /{version}/containers/{id}                           /containers/(id) (The container is first killed by default ???)
 
 POST   /{version}/containers/images/register                ???
-GET    /{version}/containers/images                         /images/json
+GET    /{version}/containers/images/json                    /images/json
 PUT    /{version}/containers/images/<id>                    ???
 DELETE /{version}/containers/images/<id>                    /images/(name) (note id vs name ???)
 
@@ -104,10 +104,7 @@ def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
     path_segments = path.split('/')
     if path_segments[3] == 'images':
-        if len(path_segments) == 4:
-            docker_path = '/'.join(path_segments[3:]) + '/json'  # /<v>/containers/images -> /containers/images/json
-        else:
-            docker_path = '/'.join(path_segments[3:])   # /<v>/containers/images/xxx -> /containers/images/xxx
+        docker_path = '/'.join(path_segments[3:])   # /<v>/containers/images/xxx -> /containers/images/xxx
     else:
         docker_path = '/'.join(path_segments[2:]) # /<v>/containers/xxx -> /containers/xxx
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
