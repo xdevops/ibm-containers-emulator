@@ -41,10 +41,13 @@ DELETE /{version}/containers/images/<id>                    /images/(name) (note
 The following have no corresponding Docker implementation
 
 POST   /{version}/containers/tokens
+GET    /{version}/containers/usage
 
 GET    /{version}/containers/floating-ips{?all}
 POST   /{version}/containers/{id}/floating-ips/{ip}/bind
 POST   /{version}/containers/{id}/floating-ips/{ip}/unbind
+POST   /{version}/containers/floating-ips/request
+POST   /{version}/containers/floating-ips/{ip}/release
 
 GET    /{version}/containers/groups
 POST   /{version}/containers/groups/create
@@ -973,6 +976,69 @@ Unbind floating ip {ip} from container {id}
 @app.route('/<v>/containers/<id>/floating-ips/<ip>/unbind', methods=['POST'])
 def unset_floating_ips(v,id, ip):
     return "", 204
+
+"""
+## POST /{version}/containers/floating-ips/request
+
+Request a new floating ip for a tenant
+
++ Request (application/json)
+  + Headers
+       Accept:  application/json
+       X-Auth-Token: <TOKEN>
+
+
++ Response 200 (text/plain)
+     "158.85.33.143"
++ Response 400 (text/plain)
+     Quota exceeded for resources: ['floatingip']
++ Response 401 (text/plain)
+     Authentication required
++ Response 404 (text/plain)
+     No external network interface found
++ Response 401 (text/plain)
++ Response 500 (text/plain)
+
+"""
+@app.route('/<v>/containers/floating-ips/request', methods=['POST'])
+# @token_required
+def request_floating_ips(v):
+    # creds,msg = parse_token_for_creds(request.headers)
+    # if creds == None:
+    #     return INVALID_TOKEN_FORMAT + msg,401
+    return "Not implemented", 501
+
+
+
+
+"""
+## POST /{version}/containers/floating-ips/{ip}/release
+
+Release floating ip {ip} back to general pool
+
++ Request (application/json)
+  + Headers
+       Accept:  application/json
+       X-Auth-Token: <TOKEN>
+
+
++ Response 204 (text/plain)
++ Response 400 (text/plain)
++ Response 401 (text/plain)
+     Authentication required
++ Response 404 (text/plain)
+    no such ip
++ Response 500 (text/plain)
+
+"""
+@app.route('/<v>/containers/floating-ips/<ip>/release', methods=['POST'])
+#@token_required
+def release_floating_ips(v,ip):
+    # creds,msg = parse_token_for_creds(request.headers)
+    # if creds == None:
+    #     return INVALID_TOKEN_FORMAT + msg,401
+    return "Not implemented", 501
+
 
 """
 # Group Scaling Groups Management
