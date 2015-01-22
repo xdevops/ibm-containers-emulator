@@ -572,7 +572,13 @@ TODO - check if could return a stream or just plain text (deviating from current
 """
 @app.route('/<v>/containers/<id>/logs', methods=['GET'])
 def get_logs(v,id):
-    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
+    # TODO look at ice's request to see if the streams were specified there (how?)
+    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'},
+                     params={'stderr': 1, 'stdout': 1})
+    
+    if r.status_code != 200:
+        app.logger.warn("Docker returned {0}: {1}".format(r.status_code, r.text))
+        
     return get_response_text(r.status_code, r.text, 'logs')
 
 """
