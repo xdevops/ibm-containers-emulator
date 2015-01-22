@@ -7,7 +7,18 @@ To use, first
 
     ./run.sh
    
-... to start the service.  Then use the `ice` CLI to log in
+... to start the service.  
+
+Using the web UI
+=====================================
+
+Point your browser to [http://localhost:5000/v2/containers/json](http://localhost:5000/v2/containers/json).
+
+Testing with *ice* CLI
+=====================================
+
+
+Use the `ice` CLI to log in
 
     ice login --host http://localhost:5000 --key `whoami`-token
     # `whoami`-token just generates a dummy, which ice needs and is helpful for logging and simulating multi-user function.
