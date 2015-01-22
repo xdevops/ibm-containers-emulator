@@ -1270,6 +1270,11 @@ def get_group_health(v,id):
     status_code, running_containers = fixup_containers_response(r.json())
     if status_code != 200:
         return status_code, running_containers
+    
+    if not GROUP_STORE.get_group(id):
+        app.logger.warning("get_group_health failed, no group id {0}".format(id))
+        return "No such id {0}".format(id), 404
+    
     group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
     response = []
     for container in running_containers:
