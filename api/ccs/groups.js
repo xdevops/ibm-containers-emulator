@@ -21,7 +21,7 @@ ccs.GroupsViewModel = function() {
         desiredContainers: ko.observable(2),
 
         dockerRepos: ko.observableArray([
-            {name: 'Your Image Registry', url: 'http://localhost:5000/v2/containers/images'},
+            {name: 'Your Image Registry', url: 'http://localhost:5000/v2/containers/images/json'},
             {name: 'DockerHub', url:'http://localhost:4243/images/search?term='}
         ]),
         selectedRepo: ko.observable()
@@ -61,12 +61,16 @@ ccs.GroupsViewModel = function() {
     self.launchData.getContainerImages = function(query) {
         var localRepoCallback = function(data) {
             self.launchData.images.removeAll();
-            data.forEach(function(elem) {
-                var image = elem;
-                elem.RepoTags.forEach(function(tag) {
+            data.forEach(function(image) {
+                var d = new Date(image.Created);
+                image.Created = d.getTime() / 1000;
+                image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
+                image.RepoTags.forEach(function(tag) {
                     if (tag.indexOf('<none>') == -1) {
-                        image.Name = tag;
-                        self.launchData.images.push(elem);
+                        tag = tag.split(':');
+                        image.Name = tag[0];
+                        image.Tag = tag[1] ? tag[1] : '';
+                        self.launchData.images.push(image);
                     }
                 });
             });

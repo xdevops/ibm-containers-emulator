@@ -163,7 +163,7 @@ textarea {
 }
 
 .scrollable-div {
-    height: 250px;
+    height: 325px;
     margin-bottom: 0;
     overflow: scroll;
 }

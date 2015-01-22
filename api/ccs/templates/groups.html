@@ -59,7 +59,7 @@
       </div>
       <div class="panel-body" data-bind="with: launchData">
         <div class="row">
-          <div class="col-md-8" style="border-right: 1px solid grey;">
+          <div class="col-md-9" style="border-right: 1px solid grey;">
             <form role="form">
               <div class="form-group">
                 <label class="control-label" for="launchWizardImageRepository">Image Repository:</label>
@@ -80,21 +80,28 @@
             <div class="scrollable-div">
               <table class="table table-striped" data-toggle="table" data-height="10">
                 <thead>
-                  <td>Name</td>
-                  <td>ID</td>
-                  <td>Created</td>
+                  <tr class="bg-primary">
+                    <td class="col-sm-3">Name</td>
+                    <td class="col-sm-1">Tag</td>
+                    <td class="col-sm-4">ID</td>
+                    <td class="">Created</td>
+                    <td class="">Virtual Size</td>
+                  </tr>
                 </thead>
                 <tbody data-bind="foreach: filteredImages">
                   <tr>
                     <td class="field-ellipsis"><a data-bind="text: Name, click: $parent.setImage, tooltip: {title: Name}"></a></td>
+                    <td class="field-ellipsis"  style="width: 10%;" data-bind="text: Tag"></td>
                     <td class="field-ellipsis" data-bind="text: Id"></td>
                     <td class="field-ellipsis" data-bind="text: ccs.createdText(Created)"></td>
+                    <td class="field-ellipsis"><span data-bind="text: VirtualSize"></span> MB</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-          <div class="col-md-4">
+
+          <div class="col-md-3">
             <form role="form">
               <div class="form-group">
                 <label class="control-label" for="launchWizardGroup">Container / Group Name:</label>
