@@ -1,7 +1,7 @@
 Testing with mock_ccsapi
 =====================================
 
-MOCK_CCSAPI is a shim that implements the CCSAPI on top of a local Docker environment.
+MOCK_CCSAPI is a shim that implements the [CCSAPI](https://github.rtp.raleigh.ibm.com/project-alchemy/ccsapi) on top of a local Docker environment.
 
 To use, first
 
@@ -18,7 +18,7 @@ Testing with *ice* CLI
 =====================================
 
 
-Use the `ice` CLI to log in
+Use the [`ice`](https://github.rtp.raleigh.ibm.com/project-alchemy/ccscli) CLI to log in
 
     ice login --host http://localhost:5000 --key `whoami`-token
     # `whoami`-token just generates a dummy, which ice needs and is helpful for logging and simulating multi-user function.
@@ -48,7 +48,7 @@ Configuring for *boot2docker*
 
 mock_ccsapi only speaks HTTP, not HTTPS, so it is important that Docker be exposed via HTTP.
 
-To do this with boot2docker,
+To do this with [boot2docker](http://boot2docker.io),
 
     boot2docker ssh
     sudo su
