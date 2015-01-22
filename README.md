@@ -32,3 +32,32 @@ If you are feeling brave, the one-liner is
 
     kill `ps aux | grep "python api/app.py" | awk '{ print $2 }' | sort | head -n 1`
     
+Configuring for *boot2docker*
+=====================================
+
+mock_ccsapi only speaks HTTP, not HTTPS, so it is important that Docker be exposed via HTTP.
+
+To do this with boot2docker,
+
+    boot2docker ssh
+    sudo su
+    vi /var/lib/boot2docker/profile
+
+The file may not exist, if so it is fine as long as we add 
+
+    DOCKER_TLS=no
+    DOCKER_HOST:='-H tcp://0.0.0.0:2375'
+
+then restart boot2docker
+
+    boot2docker halt
+    boot2docker up
+    
+At this point, boot2docker will suggest new environment settings for `docker` itself.
+
+Recent boot2docker images configurations use the IANA Docker ports of 2375 (HTTP) and 2376 (TLS).
+mock_ccsapi is defaults to 4243, so to work with newer Docker defaults you must change this
+
+    export DOCKER_REMOTE_HOST=localhost:2375
+    ./run.sh
+    
