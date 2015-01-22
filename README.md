@@ -12,7 +12,8 @@ To use, first
 Using the web UI
 =====================================
 
-Point your browser to [http://localhost:5000/v2/containers/json](http://localhost:5000/v2/containers/json).
+Point your browser to [http://localhost:5000/v2/containers/json](http://localhost:5000/v2/containers/json)
+or [http://localhost:5000/v2/containers/groups](http://localhost:5000/v2/containers/groups).
 
 Testing with *ice* CLI
 =====================================
