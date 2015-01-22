@@ -15,23 +15,26 @@ from flask import Flask, request, Response
 from string import Template
 from groupstore import FileGroupStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
+import logging
+import sys
+import datetime
 
 """
 CCS API                                                     Docker API
 -------------------------------------------------------     ------------------------------------------------------------------------------------
-GET    /{version}/containers/json{?all,limit,size}          /containers/json
-POST   /{version}/containers/create{?name}                  /containers/create (also POST /containers/{id}/start)
-POST   /{version}/containers/{id}/start                     /containers/{id}/start
+GET    /{version}/containers/json{?all,limit,size}          /containers/json{?all,limit,size}
+POST   /{version}/containers/create{?name}                  /containers/create{?name} (also POST /containers/(id)/start)
+POST   /{version}/containers/{id}/start                     /containers/(id)/start
 GET    /{version}/containers/{id}/json                      /containers/(id)/json
-GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs
-POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop
-POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart
+GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs{?stdout,stderr}
+POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop{?t}
+POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart{?t}
 POST   /{version}/containers/{id}/pause                     /containers/(id)/pause
 POST   /{version}/containers/{id}/unpause                   /containers/(id)/unpause
 DELETE /{version}/containers/{id}                           /containers/(id) (The container is first killed by default ???)
 
 POST   /{version}/containers/images/register                ???
-GET    /{version}/containers/images                         /images/json
+GET    /{version}/containers/images/json                    /images/json
 PUT    /{version}/containers/images/<id>                    ???
 DELETE /{version}/containers/images/<id>                    /images/(name) (note id vs name ???)
 
@@ -53,12 +56,12 @@ Problems and Incompatibilities
 
 1. Missing Names field
 2. Status field value from Docker is being overwritten
-4. When should get_container_status return "Suspended"
-5. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
-6. extensions - see fixup_containers_response
-7. note incompatible IPAddress -> IpAddress
-8. note Name field has no leading '/' character as in docker
-9. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+3. When should get_container_status return "Suspended"
+4. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
+5. extensions - see fixup_containers_response
+6. note incompatible IPAddress -> IpAddress
+7. note Name field has no leading '/' character as in docker
+8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
 """
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
@@ -101,10 +104,7 @@ def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
     path_segments = path.split('/')
     if path_segments[3] == 'images':
-        if len(path_segments) == 4:
-            docker_path = '/'.join(path_segments[3:]) + '/json'  # /<v>/containers/images -> /containers/images/json
-        else:
-            docker_path = '/'.join(path_segments[3:])   # /<v>/containers/images/xxx -> /containers/images/xxx
+        docker_path = '/'.join(path_segments[3:])   # /<v>/containers/images/xxx -> /containers/images/xxx
     else:
         docker_path = '/'.join(path_segments[2:]) # /<v>/containers/xxx -> /containers/xxx
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
@@ -207,6 +207,23 @@ def fixup_containers_response(containers_json):
         # container["SizeRw"]
 
     return 200, containers_json
+
+def fixup_images_response(images_json):
+    app.logger.debug("REACHED fixup_images_response, images_json={0}".format(images_json))
+    
+    for image in images_json:
+        app.logger.warn("in fixup_images_response converting {0}".format(image))
+        
+        # The following properties are missing or incompatible
+        if 'Image' not in image:
+            image['Image'] = image['RepoTags'][0]
+        
+        # Docker gives 'Created' as an Int, but in CCSAPI it is a String
+        # CCSAPI usually wants things like 2014-12-01T20:36:28Z
+        # I couldn't figure out the T and Z part but this is close:
+        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).strftime('%Y-%m-%d %H:%M:%S')
+
+    return 200, images_json
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
@@ -390,9 +407,35 @@ Creates and start a container. In the Docker API there are two separate APIs to 
 
 @app.route('/<v>/containers/create', methods=['POST'])
 def create_and_start_container(v):
-    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    app.logger.debug("in create_and_start_container, request.data={0}".format(request.data))
+    
+    create_and_start_data = json.loads(request.data)
+    
+    if create_and_start_data['Memory'] == 256:
+        app.logger.debug("create_and_start_container overriding memory default")
+        create_and_start_data['Memory'] = 0
+
+    # This is something of a hack; it is a work-around for a hack Alaa did
+    # of always injecting a host if not specified...
+    if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
+        create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
+    
+    r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
+    if r.status_code != 201:
+        app.logger.error("FAILED to create container in create_and_start_container: {0}".format(r.text))
+        app.logger.error("Request was: {0}".format(r.text))
+        return r.text, r.status_code
+    
+    app.logger.info("Created container in create_and_start_container")
+    response = json.loads(r.text)
+    app.logger.warn("create_and_start_container, Docker's response={0}".format(response))
+    
+    # Fix up incompatibilities
+    if 'Warnings' in response and response['Warnings'] == None:
+        response['Warnings'] = []
+        
     #TODO: if create was successful, call /containers/{id}/start
-    return r.text, r.status_code
+    return json.dumps(response), r.status_code
 
 """
 ## POST /{version}/containers/{id}/start
@@ -751,10 +794,13 @@ List all available images in for a tenant in container cloud
 
 """
 # TODO should we consider adding '/json' to be consistent with container list??
-@app.route('/<v>/containers/images', methods=['GET'])
+@app.route('/<v>/containers/images/json', methods=['GET'])
 def get_images(v):
+    # TODO Something is wrong, I am only seeing two images in the response
+    # from the next line...
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    return get_response_text(r.status_code, r.text, 'images')
+    status_code, response_json = fixup_images_response(r.json()) if r.status_code == 200 else (r.status_code, r.text)
+    return get_response_text(status_code, json.dumps(response_json), 'images')
 
 """
 ## PUT /{version}/containers/images/<id>
@@ -1162,6 +1208,11 @@ def get_group_health(v,id):
 
 ### Start up code
 if __name__ == '__main__':
+    # TODO Why doesn't the following add console logging?
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setLevel(logging.DEBUG) # TODO I can't seem to see output below WARN level...
+    app.logger.addHandler(handler)
+    
     app.run(host='0.0.0.0')
 else:
     application = app
