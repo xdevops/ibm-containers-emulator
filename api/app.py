@@ -220,11 +220,9 @@ def fixup_images_response(images_json):
         # The following properties are missing or incompatible
         if 'Image' not in image:
             image['Image'] = image['RepoTags'][0]
-        
+
         # Docker gives 'Created' as an Int, but in CCSAPI it is a String
-        # CCSAPI usually wants things like 2014-12-01T20:36:28Z
-        # I couldn't figure out the T and Z part but this is close:
-        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).strftime('%Y-%m-%d %H:%M:%S')
+        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).isoformat()
 
     return 200, images_json
 
@@ -1266,10 +1264,10 @@ Returns health status for containers in group {id}
 def get_group_health(v,id):
     r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
     if r.status_code != 200:
-        return r.status_code, r.text
+        return r.text, r.status_code 
     status_code, running_containers = fixup_containers_response(r.json())
     if status_code != 200:
-        return status_code, running_containers
+        return running_containers, status_code
     
     if not GROUP_STORE.get_group(id):
         app.logger.warning("get_group_health failed, no group id {0}".format(id))
