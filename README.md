@@ -18,7 +18,7 @@ Testing with *ice* CLI
 =====================================
 
 
-Use the [`ice`](https://github.rtp.raleigh.ibm.com/project-alchemy/ccscli) CLI to log in
+Use the [ice](https://github.rtp.raleigh.ibm.com/project-alchemy/ccscli) CLI to log in
 
     ice login --host http://localhost:5000 --key `whoami`-token
     # `whoami`-token just generates a dummy, which ice needs and is helpful for logging and simulating multi-user function.
