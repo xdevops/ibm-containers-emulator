@@ -1212,6 +1212,82 @@ def get_group_health(v,id):
             response.append(container_info)
     return get_response_text(status_code, json.dumps(response), 'group_health')
 
+"""
+## GET /{version}/containers/usage
+
+Show the current resource usage and list quota limits
+for my tenant
+
++ Request (application/json)
+  + Headers
+       Accept:  application/json
+       X-Auth-Token: <TOKEN>
+
++ Response 200 (application/json)
+```json
+    {
+     "Limits": {
+             "containers": 8,
+             "vcpu": 8,
+             "memory_MB": 2048,
+             "floating_ips": 2
+             },
+     "Usage": {
+             "containers": 5,
+             "running": 4,
+             "vcpu": 4,
+             "memory_MB": 1024,
+             "floating_ips": 2
+             }
+}
+
+```
++ Response 400 (text/plain)
+     Bad request
++ Response 401 (text/plain)
+     Authentication required
++ Response 500 (text/plain)
+
+"""
+@app.route('/<v>/containers/usage', methods=['GET'])
+#@token_required
+def get_limits(v):
+    # creds,msg = parse_token_for_creds(request.headers)
+    # if creds == None:
+    #     return INVALID_TOKEN_FORMAT + msg,401
+    
+    # TODO get real values from Docker?
+    result = {"Usage":      # Current usage 
+              {"vcpu": 10, 
+               "memory_MB": 2560, 
+               "running": 10, 
+               "floating_ips": 4, 
+               "containers": 10},
+              # This is the quota 
+              "Limits": {"vcpu": "80", 
+                         "memory_MB": "20480", 
+                         "floating_ips": "24", 
+                         "containers": "80"}, 
+              # These are the flavors
+              "AvailableSizes": {"1": {"memory_MB": 256, 
+                                       "vcpus": 1, 
+                                       "disk": 1, 
+                                       "name": "m1.tiny"}, 
+                                 "3": {"memory_MB": 1024, 
+                                       "vcpus": 4, 
+                                       "disk": 10, 
+                                       "name": "m1.medium"}, 
+                                 "2": {"memory_MB": 512, 
+                                       "vcpus": 2, "disk": 2, 
+                                       "name": "m1.small"}, 
+                                 "4": {"memory_MB": 2048, 
+                                       "vcpus": 8, 
+                                       "disk": 10, 
+                                       "name": "m1.large"}}}
+    
+    return json.dumps(result), 200
+
+
 ### Start up code
 if __name__ == '__main__':
     # TODO Why doesn't the following add console logging?
