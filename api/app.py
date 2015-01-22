@@ -1256,18 +1256,26 @@ def get_limits(v):
     # if creds == None:
     #     return INVALID_TOKEN_FORMAT + msg,401
     
-    # TODO get real values from Docker?
+    running_containers = 0
+    r = requests.get('http://{0}/containers/json'.format(DOCKER_REMOTE_HOST),
+                     headers={'Accept': 'application/json'})
+    if r.status_code == 200:
+        running_containers = len(r.json())
+    else:
+        app.logger.warn("Couldn't get containers list from Docker; {0}: {1}".format(r.status_code, r.text))
+    
+    # TODO get real VPU values from Docker instead of assuming each container 1 VCPU and 256 MB
     result = {"Usage":      # Current usage 
-              {"vcpu": 10, 
-               "memory_MB": 2560, 
-               "running": 10, 
-               "floating_ips": 4, 
-               "containers": 10},
-              # This is the quota 
-              "Limits": {"vcpu": "80", 
-                         "memory_MB": "20480", 
+              {"vcpu": running_containers, 
+               "memory_MB": 256 * running_containers, 
+               "running": running_containers, 
+               "floating_ips": 0, 
+               "containers": running_containers},
+              # This is the quota.  TODO Why are the usage figures and flavor values numbers and the quota strings!?! 
+              "Limits": {"vcpu": "100", 
+                         "memory_MB": "25600", 
                          "floating_ips": "24", 
-                         "containers": "80"}, 
+                         "containers": "100"}, 
               # These are the flavors
               "AvailableSizes": {"1": {"memory_MB": 256, 
                                        "vcpus": 1, 
