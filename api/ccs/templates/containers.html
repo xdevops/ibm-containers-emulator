@@ -19,9 +19,9 @@
           </thead>
           <tbody data-bind="foreach: containers">
             <tr>
-              <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Names[0]"></a></td>
-              <td class="field-ellipsis"><span  data-toggle="tooltip" data-placement="top" data-bind="attr: {title: Id}, text: Id"></span></td>
-              <td class="field-ellipsis"><span data-bind="text: Image"></span></td>
+              <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Name, tooltip: {title: Name}"></a></td>
+              <td class="field-ellipsis"><span data-bind="text: Id, tooltip: {title: Id}"></span></td>
+              <td class="field-ellipsis"><span data-bind="text: Image, tooltip: {title: Image}"></span></td>
 
               <td class="field-ellipsis"><span data-bind="text: NetworkSettings.IpAddress"></span></td>
               <td class="field-ellipsis"><span data-bind="text: NetworkSettings.PublicIpAddress"></span></td>

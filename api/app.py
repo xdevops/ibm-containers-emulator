@@ -137,7 +137,7 @@ running docker container:
     "Running": true,
     "StartedAt": "2015-01-18T20:29:07.402833784Z"
   },
-  
+
 paused docker container:
 
   "State": {

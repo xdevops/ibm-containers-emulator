@@ -1,7 +1,7 @@
 var onload_function = function() {
     // step 0: setup global context
     var elem = document.getElementById('payload');
-    var jso = JSON.parse(elem.innerText);
+    var jso = JSON.parse(elem.textContent);
     jso._subject = elem.getAttribute('resource-url');
 
     window.$context = {

@@ -100,18 +100,21 @@ textarea {
 
 .traffic-heading {
   padding: 5px;
-  background-color: #777;
+  /* background-color: #777; */
   color: #f8f8ff;
+  /* border-bottom: 1px solid #777; */
 }
 
 .traffic-body {
   background-color: white;
   color: black;
+  height: 100px;
 }
 
 .traffic-footer {
   padding: 5px;
-  background-color: #777;
+  /* background-color: #777; */
+  /* border-top: 1px solid #777; */
   color: #f8f8ff;
   position: absolute;
   width: 100%;
@@ -162,8 +165,19 @@ textarea {
 .scrollable-div {
     height: 250px;
     margin-bottom: 0;
-    overflow: auto;
+    overflow: scroll;
 }
+
+::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0,0,0,.5);
+    -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+
 
 /* this is to align row elements in different columns with h4 as used in the bootstrap css theme */
 .h4-margin {
@@ -173,4 +187,92 @@ textarea {
 .no-float {
   float: none;
 }
+
+.bg-white {
+  color: #000000;
+  background-color: #eeeeee;
+}
+
+.boxtext {
+  padding: 5px 5px 5px 5px;
+}
+
+.form-control.num100 {
+  width: 5em;
+}
+
+.addon-pad {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Morris Charting Formating */
+
+.mainChartContainer {
+  min-width: 360px;
+  max-width: 500px;
+  height: 250px;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  float: left;
+  overflow: hidden;
+}
+
+.mChartTitle{
+  font-family: 'Helvetica Neue';
+  font-size: 12px;
+  color: #93a2aa;
+  margin: 0;
+  font-weight: 500;
+}
+
+#mChart{
+  height: 100px;
+  margin: -10px -10px -10px -20px;
+  circle{
+    stroke-width: 3px;
+  }
+}
+
+p.mChartDesc{
+  border-top: 1px dashed #e3e3e4;
+  color: #93a2aa;
+  margin: 0;
+  padding: 0;
+  padding-top: 5px;
+  margin-bottom: 7px;
+  font-family: 'Helvetica Neue';
+  font-size: 10px;
+}
+
+.sideDataUpdate{
+  width: 70px;
+  height: 130px;
+  float: left;
+  position: relative;
+  background-color: white;
+  border-left: 1px solid #e3e3e4;
+  padding-left: 10px;
+}
+
+.dataTitle{
+  font-family: 'Helvetica Neue';
+  font-size: 12px;
+  color: #93a2aa;
+  margin-top: 25px;
+  margin-bottom: 10px;
+}
+
+.dataValue{
+  font-family: 'Helvetica Neue';
+  font-style: upper-roman;
+  font-weight: 400;
+  font-size: 20px;
+  color: #00b098;
+}
+
+.text-monitor {
+  color: #93a2aa;
+}
+
 

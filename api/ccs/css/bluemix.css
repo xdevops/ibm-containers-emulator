@@ -120,6 +120,7 @@ a.list-group-item:hover, a.list-group-item:focus {
 .panel-body {
     background-color: #ffffff;
     min-height: 100px;
+    color: #2c3e50;
 }
 
 .panel-body p, .panel-body a, .panel-body label {
