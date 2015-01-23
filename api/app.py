@@ -41,10 +41,13 @@ DELETE /{version}/containers/images/<id>                    /images/(name) (note
 The following have no corresponding Docker implementation
 
 POST   /{version}/containers/tokens
+GET    /{version}/containers/usage
 
 GET    /{version}/containers/floating-ips{?all}
 POST   /{version}/containers/{id}/floating-ips/{ip}/bind
 POST   /{version}/containers/{id}/floating-ips/{ip}/unbind
+POST   /{version}/containers/floating-ips/request
+POST   /{version}/containers/floating-ips/{ip}/release
 
 GET    /{version}/containers/groups
 POST   /{version}/containers/groups/create
@@ -223,9 +226,7 @@ def fixup_images_response(images_json):
             image['Image'] = image['RepoTags'][0]
 
         # Docker gives 'Created' as an Int, but in CCSAPI it is a String
-        # CCSAPI usually wants things like 2014-12-01T20:36:28Z
-        # I couldn't figure out the T and Z part but this is close:
-        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).strftime('%Y-%m-%d %H:%M:%S')
+        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).isoformat()
 
     return 200, images_json
 
@@ -584,7 +585,13 @@ TODO - check if could return a stream or just plain text (deviating from current
 """
 @app.route('/<v>/containers/<id>/logs', methods=['GET'])
 def get_logs(v,id):
-    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
+    # TODO look at ice's request to see if the streams were specified there (how?)
+    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'},
+                     params={'stderr': 1, 'stdout': 1})
+    
+    if r.status_code != 200:
+        app.logger.warn("Docker returned {0}: {1}".format(r.status_code, r.text))
+        
     return get_response_text(r.status_code, r.text, 'logs')
 
 """
@@ -981,6 +988,69 @@ def unset_floating_ips(v,id, ip):
     return "", 204
 
 """
+## POST /{version}/containers/floating-ips/request
+
+Request a new floating ip for a tenant
+
++ Request (application/json)
+  + Headers
+       Accept:  application/json
+       X-Auth-Token: <TOKEN>
+
+
++ Response 200 (text/plain)
+     "158.85.33.143"
++ Response 400 (text/plain)
+     Quota exceeded for resources: ['floatingip']
++ Response 401 (text/plain)
+     Authentication required
++ Response 404 (text/plain)
+     No external network interface found
++ Response 401 (text/plain)
++ Response 500 (text/plain)
+
+"""
+@app.route('/<v>/containers/floating-ips/request', methods=['POST'])
+# @token_required
+def request_floating_ips(v):
+    # creds,msg = parse_token_for_creds(request.headers)
+    # if creds == None:
+    #     return INVALID_TOKEN_FORMAT + msg,401
+    return "Not implemented", 501
+
+
+
+
+"""
+## POST /{version}/containers/floating-ips/{ip}/release
+
+Release floating ip {ip} back to general pool
+
++ Request (application/json)
+  + Headers
+       Accept:  application/json
+       X-Auth-Token: <TOKEN>
+
+
++ Response 204 (text/plain)
++ Response 400 (text/plain)
++ Response 401 (text/plain)
+     Authentication required
++ Response 404 (text/plain)
+    no such ip
++ Response 500 (text/plain)
+
+"""
+@app.route('/<v>/containers/floating-ips/<ip>/release', methods=['POST'])
+#@token_required
+def release_floating_ips(v,ip):
+    # creds,msg = parse_token_for_creds(request.headers)
+    # if creds == None:
+    #     return INVALID_TOKEN_FORMAT + msg,401
+    return "Not implemented", 501
+
+
+"""
 # Group Scaling Groups Management
 
 """
@@ -1206,10 +1276,15 @@ Returns health status for containers in group {id}
 def get_group_health(v,id):
     r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
     if r.status_code != 200:
-        return r.status_code, r.text
+        return r.text, r.status_code 
     status_code, running_containers = fixup_containers_response(r.json())
     if status_code != 200:
-        return status_code, running_containers
+        return running_containers, status_code
+    
+    if not GROUP_STORE.get_group(id):
+        app.logger.warning("get_group_health failed, no group id {0}".format(id))
+        return "No such id {0}".format(id), 404
+    
     group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
     response = []
     for container in running_containers:
@@ -1217,6 +1292,90 @@ def get_group_health(v,id):
             container_info = {"Name": container["Name"], "Ip": container["NetworkSettings"]["IpAddress"], "Status": container["Status"]}
             response.append(container_info)
     return get_response_text(status_code, json.dumps(response), 'group_health')
+
+"""
+## GET /{version}/containers/usage
+
+Show the current resource usage and list quota limits
+for my tenant
+
++ Request (application/json)
+  + Headers
+       Accept:  application/json
+       X-Auth-Token: <TOKEN>
+
++ Response 200 (application/json)
+```json
+    {
+     "Limits": {
+             "containers": 8,
+             "vcpu": 8,
+             "memory_MB": 2048,
+             "floating_ips": 2
+             },
+     "Usage": {
+             "containers": 5,
+             "running": 4,
+             "vcpu": 4,
+             "memory_MB": 1024,
+             "floating_ips": 2
+             }
+}
+
+```
++ Response 400 (text/plain)
+     Bad request
++ Response 401 (text/plain)
+     Authentication required
++ Response 500 (text/plain)
+
+"""
+@app.route('/<v>/containers/usage', methods=['GET'])
+#@token_required
+def get_limits(v):
+    # creds,msg = parse_token_for_creds(request.headers)
+    # if creds == None:
+    #     return INVALID_TOKEN_FORMAT + msg,401
+    
+    running_containers = 0
+    r = requests.get('http://{0}/containers/json'.format(DOCKER_REMOTE_HOST),
+                     headers={'Accept': 'application/json'})
+    if r.status_code == 200:
+        running_containers = len(r.json())
+    else:
+        app.logger.warn("Couldn't get containers list from Docker; {0}: {1}".format(r.status_code, r.text))
+    
+    # TODO get real VPU values from Docker instead of assuming each container 1 VCPU and 256 MB
+    result = {"Usage":      # Current usage 
+              {"vcpu": running_containers, 
+               "memory_MB": 256 * running_containers, 
+               "running": running_containers, 
+               "floating_ips": 0, 
+               "containers": running_containers},
+              # This is the quota.  TODO Why are the usage figures and flavor values numbers and the quota strings!?! 
+              "Limits": {"vcpu": "100", 
+                         "memory_MB": "25600", 
+                         "floating_ips": "24", 
+                         "containers": "100"}, 
+              # These are the flavors
+              "AvailableSizes": {"1": {"memory_MB": 256, 
+                                       "vcpus": 1, 
+                                       "disk": 1, 
+                                       "name": "m1.tiny"}, 
+                                 "3": {"memory_MB": 1024, 
+                                       "vcpus": 4, 
+                                       "disk": 10, 
+                                       "name": "m1.medium"}, 
+                                 "2": {"memory_MB": 512, 
+                                       "vcpus": 2, "disk": 2, 
+                                       "name": "m1.small"}, 
+                                 "4": {"memory_MB": 2048, 
+                                       "vcpus": 8, 
+                                       "disk": 10, 
+                                       "name": "m1.large"}}}
+    
+    return json.dumps(result), 200
+
 
 ### Start up code
 if __name__ == '__main__':
