@@ -62,6 +62,10 @@ Problems and Incompatibilities
 6. note incompatible IPAddress -> IpAddress
 7. note Name field has no leading '/' character as in docker
 8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+
+Extensions to current CCSAPI
+
+GET   /{version}/containers/new (launch wizard screen for containers and groups)
 """
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
@@ -210,14 +214,14 @@ def fixup_containers_response(containers_json):
 
 def fixup_images_response(images_json):
     app.logger.debug("REACHED fixup_images_response, images_json={0}".format(images_json))
-    
+
     for image in images_json:
         app.logger.warn("in fixup_images_response converting {0}".format(image))
-        
+
         # The following properties are missing or incompatible
         if 'Image' not in image:
             image['Image'] = image['RepoTags'][0]
-        
+
         # Docker gives 'Created' as an Int, but in CCSAPI it is a String
         # CCSAPI usually wants things like 2014-12-01T20:36:28Z
         # I couldn't figure out the T and Z part but this is close:
@@ -227,6 +231,14 @@ def fixup_images_response(images_json):
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
+
+"""
+# Launch Wizard route
+"""
+@app.route('/<v>/containers/new', methods=['GET'])
+def get_launch_wizard(v):
+    response_json = {}
+    return get_response_text(200, json.dumps(response_json), 'new')
 
 """
 # Group Authentication
@@ -408,9 +420,9 @@ Creates and start a container. In the Docker API there are two separate APIs to 
 @app.route('/<v>/containers/create', methods=['POST'])
 def create_and_start_container(v):
     app.logger.debug("in create_and_start_container, request.data={0}".format(request.data))
-    
+
     create_and_start_data = json.loads(request.data)
-    
+
     if create_and_start_data['Memory'] == 256:
         app.logger.debug("create_and_start_container overriding memory default")
         create_and_start_data['Memory'] = 0
@@ -419,21 +431,21 @@ def create_and_start_container(v):
     # of always injecting a host if not specified...
     if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
         create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
-    
+
     r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
     if r.status_code != 201:
         app.logger.error("FAILED to create container in create_and_start_container: {0}".format(r.text))
         app.logger.error("Request was: {0}".format(r.text))
         return r.text, r.status_code
-    
+
     app.logger.info("Created container in create_and_start_container")
     response = json.loads(r.text)
     app.logger.warn("create_and_start_container, Docker's response={0}".format(response))
-    
+
     # Fix up incompatibilities
     if 'Warnings' in response and response['Warnings'] == None:
         response['Warnings'] = []
-        
+
     #TODO: if create was successful, call /containers/{id}/start
     return json.dumps(response), r.status_code
 
@@ -1212,7 +1224,7 @@ if __name__ == '__main__':
     handler = logging.StreamHandler(sys.stderr)
     handler.setLevel(logging.DEBUG) # TODO I can't seem to see output below WARN level...
     app.logger.addHandler(handler)
-    
+
     app.run(host='0.0.0.0')
 else:
     application = app

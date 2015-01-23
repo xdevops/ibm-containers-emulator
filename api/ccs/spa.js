@@ -11,6 +11,7 @@ var ccs = window.ccs || {};
 var mapper = {
     containers: [],
     types: [
+        {name: 'new', type: 'new'},
         {name: 'containers', type: 'containers'},
         {name: 'groups', type: 'groups'},
         {name: 'container', type: 'container'},

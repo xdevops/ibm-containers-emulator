@@ -19,4 +19,8 @@ ccs.ContainersViewModel = function() {
         console.log(url);
         return url;
     };
+
+    self.gotoLaunchWizard = function() {
+        window.location = '/v2/containers/new';
+    };
 };

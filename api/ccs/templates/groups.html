@@ -1,8 +1,7 @@
 <div id="page-groups" data-bind="if: visible ">
-    <!-- ko if: showList -->
     <div class="panel panel-primary">
       <div class="panel-heading">
-        <a href="" data-bind="click: showLaunchWizard"><h4><span class="fa fa-lg fa-plus"></span><span class="pad-left-10">Create Group</span></h4></a>
+        <a href="" data-bind="click: gotoLaunchWizard"><h4><span class="fa fa-lg fa-plus"></span><span class="pad-left-10">Create Group</span></h4></a>
       </div>
       <div class="panel-body">
         <table class="table table-striped table-hover">
@@ -49,95 +48,4 @@
         </table>
       </div>
     </div>
-    <!-- /ko -->
-
-    <!-- ko ifnot: showList -->
-    <div class="panel panel-primary">
-      <div class="panel-heading">
-        <h4>Choose An Image To Launch</h4>
-        <h5>Your Image Registry URL can be found here: <span style="margin-left: 15px;" class="bg-white boxtext" data-bind="text: registryURL"></h5>
-      </div>
-      <div class="panel-body" data-bind="with: launchData">
-        <div class="row">
-          <div class="col-md-9" style="border-right: 1px solid grey;">
-            <form role="form">
-              <div class="form-group">
-                <label class="control-label" for="launchWizardImageRepository">Image Repository:</label>
-                <select id="launchWizardImageRespository" class="form-control" data-bind="options: dockerRepos, optionsText: 'name', value: selectedRepo, optionsCaption: 'Choose Image Repository', event:{ change: repoChanged} "></select>
-              </div>
-              <div class="form-group">
-                <label class="control-label" for="launchWizardFilter">Filter By Image Name:</label>
-                <div class="input-group">
-                  <input type="text" id="launchWizardFilter" class="form-control" data-bind="value: filter, valueUpdate: 'afterkeydown', click: searchImageRepository" >
-                  <div class="input-group-addon" style="cursor: pointer;">
-                    <span class="fa fa-lg fa-search addon-pad" data-bind="click: searchImageRepository"></span>
-                  </div>
-                </div>
-              </div>
-            </form>
-
-            <h4>Image Repository:</h4>
-            <div class="scrollable-div">
-              <table class="table table-striped" data-toggle="table" data-height="10">
-                <thead>
-                  <tr class="bg-primary">
-                    <td class="col-sm-3">Name</td>
-                    <td class="col-sm-1">Tag</td>
-                    <td class="col-sm-4">ID</td>
-                    <td class="">Created</td>
-                    <td class="">Virtual Size</td>
-                  </tr>
-                </thead>
-                <tbody data-bind="foreach: filteredImages">
-                  <tr>
-                    <td class="field-ellipsis"><a data-bind="text: Name, click: $parent.setImage, tooltip: {title: Name}"></a></td>
-                    <td class="field-ellipsis"  style="width: 10%;" data-bind="text: Tag"></td>
-                    <td class="field-ellipsis" data-bind="text: Id"></td>
-                    <td class="field-ellipsis" data-bind="text: ccs.createdText(Created)"></td>
-                    <td class="field-ellipsis"><span data-bind="text: VirtualSize"></span> MB</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="col-md-3">
-            <form role="form">
-              <div class="form-group">
-                <label class="control-label" for="launchWizardGroup">Container / Group Name:</label>
-                <input type="text" class="form-control" id="launchWizardGroup" data-bind="value: name">
-              </div>
-
-              <div class="form-group">
-                <label class="control-label" for="launchWizardImage">Selected Image:</label>
-                <input type="text" class="form-control" id="launchWizardImage" data-bind="value: imageName, disable: true">
-              </div>
-
-              <div class="form-group">
-                <label class="control-label" for="launchWizardIsGroup">
-                  <input type="checkbox" data-bind="checked: isGroup"> Launch As Scaling Group?
-                </label>
-              </div>
-
-              <div class="form-group">
-                <label class="control-label" for="launchWizardMin">Minimum # Containers:</label>
-                <input type="number" class="form-control num100" id="launchWizardMin" data-bind="value: minContainers, enable: isGroup">
-              </div>
-              <div class="form-group">
-                <label class="control-label" for="launchWizardMax">Maximum # Containers:</label>
-                <input type="number" class="form-control num100" id="launchWizardMax" data-bind="value: maxContainers, enable: isGroup">
-              </div>
-              <div class="form-group">
-                <label class="control-label" for="launchWizardDesired">Desired # Containers:</label>
-                <input type="number" class="form-control num100" id="launchWizardDesired" data-bind="value: desiredContainers, enable: isGroup">
-              </div>
-              <div class="form-group">
-                <button type="select" class="btn btn-primary" data-bind="click: launch, text: launchText"></button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- /ko -->
 </div>
