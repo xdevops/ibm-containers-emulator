@@ -14,8 +14,8 @@ def make_objectid():
     inc_lock.release()
     return str(rslt)
 
-def get_docker_instances():
-    docker_instances_url = 'http://%s/containers/json?all=1' % DOCKER_REMOTE_HOST
+def get_docker_instances(get_all=True):
+    docker_instances_url = 'http://%s/containers/json%s' % (DOCKER_REMOTE_HOST, '?all=1' if get_all else '')
     try:
         r = requests.get(docker_instances_url, headers={'Accept': 'application/json'}, verify=False)
         if r.status_code != 200:
@@ -27,9 +27,9 @@ def get_docker_instances():
         print '########  Exception while GETing List of containers at %s' % docker_instances_url
         return None
 
-def get_group_instances(group):
+def get_group_instances(group, get_all=True):
     name_prefix = '/' + group["Name"] + '_'
-    instances = get_docker_instances()
+    instances = get_docker_instances(get_all)
     response = []
     if instances:
         for instance in instances:
