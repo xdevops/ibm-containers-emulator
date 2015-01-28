@@ -1,6 +1,6 @@
 var ccs = window.ccs || {};
 
-ccs.endpoint = 'http://localhost:5000';
+ccs.endpoint = window.location.origin;
 
 ccs.createdText = function(created) {
     if (created == 0) return '--';

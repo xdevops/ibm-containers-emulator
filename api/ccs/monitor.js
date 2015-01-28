@@ -3,7 +3,8 @@ var ccs = window.ccs || {};
 
 var config = {}
 config.cpu = {
-  dataUrl: 'http://158.85.90.250/render?target=absolute%28offset%28avg%281f858a54939f464d8df6f024b0b48f9a_56f4e462-c725-4c99-bc75-05e588de4627_6c2801e1-90c8-47b0-823e-c9cfd0dd0900.cpu-*.cpu-idle%29,-100%29%29&format=json',
+  dataUrl: 'http://158.85.90.250/render?target=absolute(offset(averageSeries(ea207237-bcad-4cee-9fb2-72cf35189c71_0000_77d7d35d-4428-45f0-9c9f-6daa7c65a662.cpu-*.cpu-idle),-100))&format=json&from=-5min&to=-0min',
+  //dataUrl: 'http://158.85.90.250/render?target=absolute%28offset%28avg%281f858a54939f464d8df6f024b0b48f9a_56f4e462-c725-4c99-bc75-05e588de4627_6c2801e1-90c8-47b0-823e-c9cfd0dd0900.cpu-*.cpu-idle%29,-100%29%29&format=json',
   dataValue: '--',
   initSpan: '&from=-4min&to=0min',
   initArray: [],
@@ -20,7 +21,8 @@ config.cpu = {
 };
 
 config.memory = {
-  dataUrl: 'http://158.85.90.250/render?target=1f858a54939f464d8df6f024b0b48f9a_56f4e462-c725-4c99-bc75-05e588de4627_6c2801e1-90c8-47b0-823e-c9cfd0dd0900.memory.memory-used&format=json',
+  dataUrl: 'http://158.85.90.250/render?target=ea207237-bcad-4cee-9fb2-72cf35189c71_0000_77d7d35d-4428-45f0-9c9f-6daa7c65a662.memory.memory-used&format=json&from=-5min&to=-0min',
+//dataUrl: 'http://158.85.90.250/render?target=1f858a54939f464d8df6f024b0b48f9a_56f4e462-c725-4c99-bc75-05e588de4627_6c2801e1-90c8-47b0-823e-c9cfd0dd0900.memory.memory-used&format=json',
   dataValue: '--',
   initSpan: '&from=-4min&to=-0min',
   initArray: [],
@@ -37,7 +39,8 @@ config.memory = {
 };
 
 config.network = {
-  dataUrl: 'http://158.85.90.250/render?target=1f858a54939f464d8df6f024b0b48f9a_56f4e462-c725-4c99-bc75-05e588de4627_6c2801e1-90c8-47b0-823e-c9cfd0dd0900.interface-eth0.if_packets.rx&format=json',
+  dataUrl: 'http://158.85.90.250/render?target=ea207237-bcad-4cee-9fb2-72cf35189c71_0000_77d7d35d-4428-45f0-9c9f-6daa7c65a662.interface-lo.if_octets.tx&format=json&from=-5min&to=-0min',
+  //dataUrl: 'http://158.85.90.250/render?target=1f858a54939f464d8df6f024b0b48f9a_56f4e462-c725-4c99-bc75-05e588de4627_6c2801e1-90c8-47b0-823e-c9cfd0dd0900.interface-eth0.if_packets.rx&format=json',
   dataValue: '--',
   initSpan: '&from=-4min&to=-0min',
   initArray: [],
@@ -73,9 +76,11 @@ ccs.Monitor = function() {
         for (var i = 0; i < inputArray.length; i++) {
             var cur = inputArray[i];
 
-            //Check if the metric_used is null, remove the datapoint if null
-            if(cur[0])
-                morrisArray[i] = {timestamp: cur[1], metric_used: cur[0]};
+            //Check if the metric_used is null, 0 it
+            if(cur[0] == null || cur[0] == 'null')
+              cur[0] = undefined;
+
+            morrisArray[i] = {timestamp: cur[1], metric_used: cur[0]};
         }
 
         return morrisArray;

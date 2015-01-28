@@ -8,7 +8,7 @@ ccs.GroupsViewModel = function() {
     self.init = function(jso) {
         self.groups.removeAll();
         jso.forEach(function(c) {
-            c.url = '/v2/containers/groups/' + c.Id + '/json';
+            c.url = '/v2/containers/groups/' + c.Id;
             //if (c.NetworkSettings.PublicIpAddress == '') c.NetworkSettings.PublicIpAddress = '--';
             c.NetworkSettings = {PublicIpAddress: '--', IpAddress: '--'};
             console.log('TODO: Created, IpAddress, PublicIpAddress, Status not part of response');
@@ -21,5 +21,19 @@ ccs.GroupsViewModel = function() {
 
     self.gotoLaunchWizard = function() {
         window.location = '/v2/containers/new';
+    };
+
+    self.deleteGroup = function(g) {
+        // step 1 - HTTP DELETE the group
+        // step 2 - remove the group from the observableArray
+        $.ajax({
+            url: g.url,
+            type: 'DELETE',
+            success: function(result) {
+                self.groups.remove(function(group) {
+                    return g.Id == group.Id;
+                });
+            }
+        });
     };
 };
