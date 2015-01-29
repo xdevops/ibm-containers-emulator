@@ -8,24 +8,52 @@
           <thead>
             <tr>
               <th>Name</th>
-              <th>Id</th>
+              <th>Group?</th>
               <th>Image</th>
               <th>Private IP Address</th>
               <th>Public IP Address</th>
+              <th>Memory</th>
               <th>Created</th>
               <th>Status</th>
               <th></th>
             </tr>
           </thead>
-          <tbody data-bind="foreach: containers">
+          <tbody>
+            <!-- groups -->
+            <!-- ko foreach: groups -->
             <tr>
               <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Name, tooltip: {title: Name}"></a></td>
-              <td class="field-ellipsis"><span data-bind="text: Id, tooltip: {title: Id}"></span></td>
+              <td>Yes</td>
+              <td class="field-ellipsis"><span data-bind="text: Image, tooltip: {title: Image}"></span></td>
+
+              <td class="field-ellipsis">--</td>
+              <td class="field-ellipsis">--</td>
+              <td class="field-ellipsis">--</td>
+              <td><span data-bind="text: ccs.createdText($data.Created)"></span></td>
+              <td><span class="text-success" data-bind="text: Status"></td>
+              <td>
+                <div class="dropdown">
+                  <div class="dropdown-toggle" data-toggle="dropdown" id="dropdownMenu1" aria-exanded="true">
+                    <span class="fa fa-lg fa-gear"></span>
+                  </div>
+                  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Delete Group</a></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            <!-- /ko -->
+
+            <!-- containers not in a group -->
+            <!-- ko foreach: soloContainers -->
+            <tr>
+              <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Name, tooltip: {title: Name}"></a></td>
+              <td>No</td>
               <td class="field-ellipsis"><span data-bind="text: Image, tooltip: {title: Image}"></span></td>
 
               <td class="field-ellipsis"><span data-bind="text: NetworkSettings.IpAddress"></span></td>
               <td class="field-ellipsis"><span data-bind="text: NetworkSettings.PublicIpAddress"></span></td>
-
+              <td class="field-ellipsis">--</td>
               <td><span data-bind="text: ccs.createdText($data.Created)"></span></td>
               <td><span class="text-success" data-bind="text: Status"></td>
               <td>
@@ -41,6 +69,8 @@
                   </ul>
                 </div>
               </td>
+            </tr>
+            <!-- /ko -->
           </tbody>
         </table>
       </div>

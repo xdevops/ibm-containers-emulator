@@ -378,7 +378,16 @@ Returns a list of (running) containers.
 @app.route('/<v>/containers/json', methods=['GET'])
 def get_running_containers(v):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    status_code, response_json = fixup_containers_response(r.json()) if r.status_code == 200 else (r.status_code, r.text)
+    containers = r.json()
+    groups = GROUP_STORE.list_groups()
+    for c in containers:
+        for g in groups:
+            group_prefix = '/' + g["Name"] + '_'
+            for n in c["Names"]:
+                if n.startswith(group_prefix):
+                    c["Group"] = { "Name": g["Name"], "Id": g["Id"] }
+
+    status_code, response_json = fixup_containers_response(containers) if r.status_code == 200 else (r.status_code, r.text)
     return get_response_text(status_code, json.dumps(response_json), 'containers')
 
 """
