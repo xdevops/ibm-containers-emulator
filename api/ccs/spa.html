@@ -6,6 +6,8 @@
 <div class="container main-container" id="wrapper">
     <div data-bind="template: {name: 'groups', if: visible}" id="page-groups"></div>
 
+    <div data-bind="template: {name: 'group', if: visible}" id="page-group"></div>
+
     <div data-bind="template: {name: 'containers', if: visible}" id="page-containers"></div>
 
     <div data-bind="template: {name: 'container', if: visible}" id="page-container"></div>
@@ -31,6 +33,7 @@ infuser.defaults.templateUrl = '/ccs/templates';
 <script type="text/javascript" src="/ccs/container.js"></script>
 <script type="text/javascript" src="/ccs/containers.js"></script>
 <script type="text/javascript" src="/ccs/groups.js"></script>
+<script type="text/javascript" src="/ccs/group.js"></script>
 <script type="text/javascript" src="/ccs/new.js"></script>
 <script type="text/javascript" src="/ccs/monitor.js"></script>
 <script type="text/javascript" src="/ccs/viewmanager.js"></script>

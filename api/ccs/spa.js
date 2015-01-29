@@ -15,6 +15,7 @@ var mapper = {
         {name: 'containers', type: 'containers'},
         {name: 'groups', type: 'groups'},
         {name: 'container', type: 'container'},
+        {name: 'group', type: 'group'}
     ]
 };
 ViewManager.init(mapper, 'ccs', ['ccs']);

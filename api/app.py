@@ -12,6 +12,7 @@ We use [API Blueprint](http://apiblueprint.org/) for formatting and describing t
 """
 import os, requests, json
 from flask import Flask, request, Response
+#from flask.ext.cors import CORS
 from string import Template
 from groupstore import FileGroupStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
@@ -232,6 +233,10 @@ def fixup_images_response(images_json):
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
+app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['CORS_HEADERS'] = 'Content-Type'
+#cors = CORS(app, allow_headers='Content-Type')
+
 
 """
 # Launch Wizard route
@@ -588,10 +593,10 @@ def get_logs(v,id):
     # TODO look at ice's request to see if the streams were specified there (how?)
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'},
                      params={'stderr': 1, 'stdout': 1})
-    
+
     if r.status_code != 200:
         app.logger.warn("Docker returned {0}: {1}".format(r.status_code, r.text))
-        
+
     return get_response_text(r.status_code, r.text, 'logs')
 
 """
@@ -1242,9 +1247,9 @@ def delete_group(v,id):
     return "", 204
 
 """
-## GET /{version}/containers/groups/{id}/health
+## GET /{version}/containers/groups/{id}
 
-Returns health status for containers in group {id}
+Returns status for containers in group {id}
 
 + Request (application/json)
   + Headers
@@ -1272,26 +1277,35 @@ Returns health status for containers in group {id}
 + Response 500 (text/plain)
 
 """
-@app.route('/<v>/containers/groups/<id>/health', methods=['GET'])
-def get_group_health(v,id):
+@app.route('/<v>/containers/groups/<id>', methods=['GET'])
+def get_group_info(v,id):
     r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
     if r.status_code != 200:
-        return r.text, r.status_code 
+        return r.text, r.status_code
     status_code, running_containers = fixup_containers_response(r.json())
     if status_code != 200:
         return running_containers, status_code
-    
+
     if not GROUP_STORE.get_group(id):
         app.logger.warning("get_group_health failed, no group id {0}".format(id))
         return "No such id {0}".format(id), 404
-    
-    group_prefix = GROUP_STORE.get_group(id)["Name"] + '_'
-    response = []
+
+    group = GROUP_STORE.get_group(id)
+    group_prefix = group["Name"] + '_'
+
+    response = {}
+    response['Config'] = group
+    response['containers'] = []
     for container in running_containers:
         if container["Name"].startswith(group_prefix):
-            container_info = {"Name": container["Name"], "Ip": container["NetworkSettings"]["IpAddress"], "Status": container["Status"]}
-            response.append(container_info)
-    return get_response_text(status_code, json.dumps(response), 'group_health')
+            container_info = {
+                "Name": container["Name"],
+                "Ip": container["NetworkSettings"]["IpAddress"],
+                "Status": container["Status"],
+                "Id": container["Id"],
+            }
+            response['containers'].append(container_info)
+    return get_response_text(status_code, json.dumps(response), 'group')
 
 """
 ## GET /{version}/containers/usage
@@ -1336,7 +1350,7 @@ def get_limits(v):
     # creds,msg = parse_token_for_creds(request.headers)
     # if creds == None:
     #     return INVALID_TOKEN_FORMAT + msg,401
-    
+
     running_containers = 0
     r = requests.get('http://{0}/containers/json'.format(DOCKER_REMOTE_HOST),
                      headers={'Accept': 'application/json'})
@@ -1344,36 +1358,36 @@ def get_limits(v):
         running_containers = len(r.json())
     else:
         app.logger.warn("Couldn't get containers list from Docker; {0}: {1}".format(r.status_code, r.text))
-    
+
     # TODO get real VPU values from Docker instead of assuming each container 1 VCPU and 256 MB
-    result = {"Usage":      # Current usage 
-              {"vcpu": running_containers, 
-               "memory_MB": 256 * running_containers, 
-               "running": running_containers, 
-               "floating_ips": 0, 
+    result = {"Usage":      # Current usage
+              {"vcpu": running_containers,
+               "memory_MB": 256 * running_containers,
+               "running": running_containers,
+               "floating_ips": 0,
                "containers": running_containers},
-              # This is the quota.  TODO Why are the usage figures and flavor values numbers and the quota strings!?! 
-              "Limits": {"vcpu": "100", 
-                         "memory_MB": "25600", 
-                         "floating_ips": "24", 
-                         "containers": "100"}, 
+              # This is the quota.  TODO Why are the usage figures and flavor values numbers and the quota strings!?!
+              "Limits": {"vcpu": "100",
+                         "memory_MB": "25600",
+                         "floating_ips": "24",
+                         "containers": "100"},
               # These are the flavors
-              "AvailableSizes": {"1": {"memory_MB": 256, 
-                                       "vcpus": 1, 
-                                       "disk": 1, 
-                                       "name": "m1.tiny"}, 
-                                 "3": {"memory_MB": 1024, 
-                                       "vcpus": 4, 
-                                       "disk": 10, 
-                                       "name": "m1.medium"}, 
-                                 "2": {"memory_MB": 512, 
-                                       "vcpus": 2, "disk": 2, 
-                                       "name": "m1.small"}, 
-                                 "4": {"memory_MB": 2048, 
-                                       "vcpus": 8, 
-                                       "disk": 10, 
+              "AvailableSizes": {"1": {"memory_MB": 256,
+                                       "vcpus": 1,
+                                       "disk": 1,
+                                       "name": "m1.tiny"},
+                                 "3": {"memory_MB": 1024,
+                                       "vcpus": 4,
+                                       "disk": 10,
+                                       "name": "m1.medium"},
+                                 "2": {"memory_MB": 512,
+                                       "vcpus": 2, "disk": 2,
+                                       "name": "m1.small"},
+                                 "4": {"memory_MB": 2048,
+                                       "vcpus": 8,
+                                       "disk": 10,
                                        "name": "m1.large"}}}
-    
+
     return json.dumps(result), 200
 
 
