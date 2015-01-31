@@ -437,7 +437,7 @@ def create_and_start_container(v):
     app.logger.debug("in create_and_start_container, request.data={0}".format(request.data))
 
     create_and_start_data = json.loads(request.data)
-
+    
     if create_and_start_data['Memory'] == 256:
         app.logger.debug("create_and_start_container overriding memory default")
         create_and_start_data['Memory'] = 0
@@ -447,6 +447,10 @@ def create_and_start_container(v):
     if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
         create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
 
+    # This is a CCSAPI bug, "Env" should be list as in Docker, not a string
+    if "Env" in create_and_start_data and create_and_start_data["Env"]: 
+        create_and_start_data["Env"] = create_and_start_data["Env"].split(',')
+    
     r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
     if r.status_code != 201:
         app.logger.error("FAILED to create container in create_and_start_container: {0}".format(r.text))
@@ -461,8 +465,23 @@ def create_and_start_container(v):
     if 'Warnings' in response and response['Warnings'] == None:
         response['Warnings'] = []
 
-    #TODO: if create was successful, call /containers/{id}/start
-    return json.dumps(response), r.status_code
+    # CCSAPI now must also call /containers/{id}/start
+    start_data = {}
+       
+    # TEMPORARY kludge for elb
+    if "Env" in create_and_start_data and create_and_start_data["Env"]: 
+        for var in create_and_start_data["Env"]:
+            nv = var.split('=')
+            if nv[0] == 'MOCK_ELB_PUBLIC_DOMAIN_NAME':
+                host_port = nv[1][len('localhost:'):]
+                start_data = '{"PortBindings": { "80/tcp": [{ "HostPort": "%s" }] }}' % host_port
+                break
+
+    r = requests.post('http://%s/containers/%s/start' % (DOCKER_REMOTE_HOST, response['Id']), headers=request.headers, data=start_data)
+    if r.status_code != 204:
+        return r.text, r.status_code
+
+    return json.dumps(response), 201
 
 """
 ## POST /{version}/containers/{id}/start
@@ -898,6 +917,13 @@ def unregister_image(v,id):
 
 """
 
+#######################################################################################################################
+# TEMPORARY floating-ips kludge (will be removed when we get proper ccsapi ELBs)
+#######################################################################################################################
+NUM_HOST_PORTS = 9
+AVAILABLE_HOST_PORTS = [ True, True, True, True, True, True, True, True, True ]
+FIRST_HOST_PORT = 6001
+
 """
 ## GET /{version}/containers/floating-ips{?all}
 
@@ -934,24 +960,18 @@ Returns a list of (available) floating IPs
 """
 @app.route('/<v>/containers/floating-ips', methods=['GET'])
 def get_floating_ips(v):
-    dummy_response = \
-'''
-[
-    {
-        "Bindings": {
-            "ContainerId": null
-        },
-        "IpAddress": "1.1.1.1"
-    },
-    {
-        "Bindings": {
-            "ContainerId": null
-        },
-        "IpAddress": "2.2.2.2"
-    }
-]
-'''
-    return dummy_response, 200
+    # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
+    global ALLOCATED_HOST_PORTS
+    response = []
+    allocated = False
+    for i in range(0, NUM_HOST_PORTS):
+        if AVAILABLE_HOST_PORTS[i]:
+            host_port = FIRST_HOST_PORT + i
+            if not allocated:
+                AVAILABLE_HOST_PORTS[i] = False
+                allocated = True
+            response.append({ "Bindings": None, "IpAddress": "localhost:%s" % host_port })
+    return json.dumps(response), 200
 
 """
 ## POST /{version}/containers/{id}/floating-ips/{ip}/bind
@@ -1058,10 +1078,15 @@ Release floating ip {ip} back to general pool
 @app.route('/<v>/containers/floating-ips/<ip>/release', methods=['POST'])
 #@token_required
 def release_floating_ips(v,ip):
+    global ALLOCATED_HOST_PORTS
+    if ip.startswith("localhost:"):
+        host_port = int(ip[len("localhost:"):])
+        AVAILABLE_HOST_PORTS[host_port - FIRST_HOST_PORT] = True
+
     # creds,msg = parse_token_for_creds(request.headers)
     # if creds == None:
     #     return INVALID_TOKEN_FORMAT + msg,401
-    return "Not implemented", 501
+    return "", 204
 
 
 """
