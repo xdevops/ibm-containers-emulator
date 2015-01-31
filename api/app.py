@@ -117,6 +117,13 @@ def get_docker_url():
         docker_path = '/'.join(path_segments[2:]) # /<v>/containers/xxx -> /containers/xxx
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
 
+#######################################################################################################################
+# TEMPORARY floating-ips kludge (will be removed when we get proper ccsapi ELBs)
+#######################################################################################################################
+NUM_HOST_PORTS = 9
+AVAILABLE_HOST_PORTS = [ True, True, True, True, True, True, True, True, True ]
+FIRST_HOST_PORT = 6001
+
 """
 killed docker container:
 
@@ -447,7 +454,7 @@ def create_and_start_container(v):
     if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
         create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
 
-    # This is a CCSAPI bug, "Env" should be list as in Docker, not a string
+    #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
     if "Env" in create_and_start_data and create_and_start_data["Env"]: 
         create_and_start_data["Env"] = create_and_start_data["Env"].split(',')
     
@@ -469,11 +476,16 @@ def create_and_start_container(v):
     start_data = {}
        
     # TEMPORARY kludge for elb
+    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
     if "Env" in create_and_start_data and create_and_start_data["Env"]: 
         for var in create_and_start_data["Env"]:
             nv = var.split('=')
             if nv[0] == 'MOCK_ELB_PUBLIC_DOMAIN_NAME':
                 host_port = nv[1][len('localhost:'):]
+                port_index = int(host_port)-FIRST_HOST_PORT
+                if not AVAILABLE_HOST_PORTS[port_index]:
+                    return "Host port {0} is already allocated".format(host_port), 400
+                AVAILABLE_HOST_PORTS[port_index] = False
                 start_data = '{"PortBindings": { "80/tcp": [{ "HostPort": "%s" }] }}' % host_port
                 break
 
@@ -917,13 +929,6 @@ def unregister_image(v,id):
 
 """
 
-#######################################################################################################################
-# TEMPORARY floating-ips kludge (will be removed when we get proper ccsapi ELBs)
-#######################################################################################################################
-NUM_HOST_PORTS = 9
-AVAILABLE_HOST_PORTS = [ True, True, True, True, True, True, True, True, True ]
-FIRST_HOST_PORT = 6001
-
 """
 ## GET /{version}/containers/floating-ips{?all}
 
@@ -960,16 +965,11 @@ Returns a list of (available) floating IPs
 """
 @app.route('/<v>/containers/floating-ips', methods=['GET'])
 def get_floating_ips(v):
-    # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
-    global ALLOCATED_HOST_PORTS
+    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
     response = []
-    allocated = False
     for i in range(0, NUM_HOST_PORTS):
         if AVAILABLE_HOST_PORTS[i]:
             host_port = FIRST_HOST_PORT + i
-            if not allocated:
-                AVAILABLE_HOST_PORTS[i] = False
-                allocated = True
             response.append({ "Bindings": None, "IpAddress": "localhost:%s" % host_port })
     return json.dumps(response), 200
 
@@ -1078,7 +1078,7 @@ Release floating ip {ip} back to general pool
 @app.route('/<v>/containers/floating-ips/<ip>/release', methods=['POST'])
 #@token_required
 def release_floating_ips(v,ip):
-    global ALLOCATED_HOST_PORTS
+    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
     if ip.startswith("localhost:"):
         host_port = int(ip[len("localhost:"):])
         AVAILABLE_HOST_PORTS[host_port - FIRST_HOST_PORT] = True
@@ -1198,10 +1198,18 @@ TODO - evaluate if I can pass tags / version info (would HEAT support that)
 def create_group(v):
     group = json.loads(request.data)
     if "Name" not in group:
-        return "Bad parameter", 400
+        if request.args.get('name'): # TEMPORARY until group API is fixed
+            group["Name"] = request.args.get('name')
+        else:
+            return "Bad parameter", 400
     for g in GROUP_STORE.list_groups():
         if g["Name"] == group["Name"]:
             return "Scaling group with that name already exists", 409
+
+    #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
+    if "Env" in group and group["Env"]: 
+        group["Env"] = group["Env"].split(',')
+
     group_id = GROUP_STORE.put_group(group)
     response = {"Id": group_id, "Warnings":[]}
     return json.dumps(response), 201

@@ -41,7 +41,11 @@ def create_instance(group):
     global next_id
     instance_name = group["Name"] + '_' + make_objectid()
     create_url = 'http://%s/containers/create?name=%s' % (DOCKER_REMOTE_HOST, instance_name)
-    create_body = {"Image": group["Image"], "Cmd": group["Cmd"], "Env": group["Env"]}
+    create_body = {"Image": group["Image"]}
+    if "Cmd" in group: 
+        create_body["Cmd"] = group["Emd"]
+    if "Env" in group: 
+        create_body["Env"] = group["Env"]
     r = requests.post(create_url, headers={'Content-Type': 'application/json'}, data=json.dumps(create_body))
     if r.status_code != 201:
         print '######## FAILED TO CREATE url: %s status: %s text: %s body: %s' %(create_url, r.status_code, r.text, create_body)
