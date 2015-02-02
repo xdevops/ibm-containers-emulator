@@ -122,7 +122,7 @@ ccs.NewViewModel = function() {
 
     self.launchData.setImage = function(image) {
         self.launchData.image(image);
-        self.launchData.imageName(image.Name);
+        self.launchData.imageName(image.Name + ':' + image.Tag);
     };
 
     self.launchData.searchImageRepository = function() {

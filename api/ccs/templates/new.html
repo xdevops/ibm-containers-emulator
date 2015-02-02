@@ -89,17 +89,17 @@
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardGroup">Name your container/group:</label>
-                <input type="text" class="form-control" id="launchWizardGroup" data-bind="value: name">
+                <input type="text" class="form-control input-sm" id="launchWizardGroup" data-bind="value: name">
               </div>
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardImage">Selected image:</label>
-                <input type="text" class="form-control" id="launchWizardImage" data-bind="value: imageName, disable: true">
+                <input type="text" class="form-control input-sm" id="launchWizardImage" data-bind="value: imageName, disable: true">
               </div>
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardSize">Choose a container size:</label>
-                <select class="form-control" data-bind="options: availableSizes, optionsText: 'name', value: selectedSize, optionsCaption: 'Choose...'">
+                <select class="form-control input-sm" data-bind="options: availableSizes, optionsText: 'name', value: selectedSize, optionsCaption: 'Choose...'">
                 </select>
               </div>
 
@@ -110,13 +110,13 @@
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardDeploymentMethod">Choose deployment method:</label>
-                <select class="form-control" id="launchWizardDeploymentMethod" data-bind="options: deploymentMethods, optionsText: 'label', value: selectedDeploymentMethod, optionsCaption: 'Choose...'">
+                <select class="form-control input-sm" id="launchWizardDeploymentMethod" data-bind="options: deploymentMethods, optionsText: 'label', value: selectedDeploymentMethod, optionsCaption: 'Choose...'">
                 </select>
               </div>
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardDesired">Initial Instances:</label>
-                <input type="number" class="form-control num100" id="launchWizardDesired" data-bind="value: desiredContainers">
+                <input type="number" class="form-control input-sm num100 input-sm" id="launchWizardDesired" data-bind="value: desiredContainers">
               </div>
 
               <!-- cheat. should be lanch section -->
@@ -126,12 +126,12 @@
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardAssignPublicIP">Assign a Public IP Address:</label>
-                <input type="text" class="form-control" id="launchWizardAssignPublicIP" data-bind="value: publicIP, disable: isGroup">
+                <input type="text" class="form-control input-sm" id="launchWizardAssignPublicIP" data-bind="value: publicIP, disable: isGroup">
               </div>
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardAssignRoutes">Assign Routes:</label>
-                <input type="text" class="form-control" id="launchWizardAssignRoutes" data-bind="value: route, enable: isGroup">
+                <input type="text" class="form-control input-sm" id="launchWizardAssignRoutes" data-bind="value: route, enable: isGroup">
               </div>
 
               <div class="form-group">
