@@ -9,6 +9,10 @@ textarea {
     font-family: "DroidSans", "CourierNew", "Courier";
 }
 
+.panel-body hr {
+  border-top: 1px solid darkgrey;
+}
+
 .main-container {
 }
 
@@ -66,6 +70,14 @@ textarea {
 
 .pad-left-10 {
   padding-left: 10px;
+}
+
+.pad-top-10 {
+  padding-top: 10px;
+}
+
+.pad-top-12 {
+  padding-top: 12px;
 }
 
 .not-allowed {
