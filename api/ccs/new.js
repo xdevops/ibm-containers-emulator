@@ -104,6 +104,10 @@ ccs.NewViewModel = function() {
 
     };
 
+    self.launchData.updateVolumes = function() {
+        console.log(self.launchData.volumes());
+    }
+
     self.launchData.filteredImages = ko.pureComputed(function() {
         var filter = self.launchData.filter();
         if (!filter) {

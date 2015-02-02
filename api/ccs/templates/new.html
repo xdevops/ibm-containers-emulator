@@ -234,7 +234,7 @@
               <tbody data-bind="foreach: volumes">
                 <tr>
                   <td>
-                    <select class="form-control input-sm" data-bind="options: $parent.availableVolumes, optionsCaption: 'Select Volume...' ">
+                    <select class="form-control input-sm" data-bind="options: $parent.availableVolumes, value: name, optionsCaption: 'Select Volume...', click: $parent.updateVolumes ">
                     </select>
                   </td>
                   <td><span class="form-control-static">20GB</span></td>
@@ -244,7 +244,7 @@
                   <td>
                     <input type="checkbox" class="form-control" data-bind="checked: readOnly">
                   </td>
-                  <td><span class="form-control-static fa fa-lg fa-trash-o" data-bind="click: $parent.deleteVolume"></td>
+                  <td><span class="form-control-static fa fa-lg fa-times-circle-o" data-bind="click: $parent.deleteVolume"></td>
                 </tr>
               </tbody>
             </table>
