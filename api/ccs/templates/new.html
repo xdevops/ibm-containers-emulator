@@ -1,13 +1,18 @@
 <div id="page-new" data-bind="if: visible">
   <div data-bind="ifnot: step2">
     <div class="panel panel-primary">
-      <div class="panel-heading">
-        <h4>Choose An Image To Launch</h4>
-        <h5>Your Image Registry URL can be found here: <span style="margin-left: 15px;" class="bg-white boxtext" data-bind="text: registryURL"></h5>
-      </div>
-      <div class="panel-body" data-bind="with: launchData">
-        <div class="row">
+      <div class="panel-body">
+        <div class="row" data-bind="with: launchData">
           <div class="col-md-9">
+            <div class="row">
+              <div class="col-md-1"><image src="/ccs/css/images/launch-64x64.png"></div>
+              <div class="col-md-3 pad-top-10"><h4>Create A Container</h4></div>
+              <div class="col-md-8 pad-top-12">
+                <h5>Your Image Registry URL: <span style="margin-left: 15px;" class="bg-white boxtext" data-bind="text: $parent.registryURL"></h5>
+              </div>
+            </div>
+            <hr>
+
             <div class="row">
               <div class="col-md-8">
                 <h4>Select image from your registry:</h4>
@@ -82,7 +87,7 @@
             <button class="btn btn-info" style="margin-left: 10px;">TERMS</button>
           </div>
 
-          <div class="col-md-3" style="border-left: 1px solid grey;">
+          <div class="col-md-3" style="border-left: 1px solid grey; background-color: #eee">
             <form role="form">
               <h4>Container Settings</h4>
               <hr>
@@ -148,7 +153,10 @@
     <div class="panel panel-primary">
       <div class="panel-body" data-bind="with: launchData">
         <div class="col-md-4">
-          <h4>Create a Container</h4>
+          <div class="row">
+            <div class="col-md-3"><image src="/ccs/css/images/launch-64x64.png"></div>
+            <div class="col-md-9 pad-top-10"><h4>Create A Container</h4></div>
+          </div>
           <hr>
 
           <h5>Container Summary</h5>
@@ -202,7 +210,7 @@
           <button class="btn btn-info">VIEW DOCS</button>
           <button class="btn btn-info" style="margin-left: 10px;">TERMS</button>
         </div>
-        <div class="col-md-8" style="border-left: 1px solid grey;">
+        <div class="col-md-8" style="border-left: 1px solid grey; background-color: #eee">
           <form role="form">
             <h4>Container Port Settings</h4>
             <hr>
