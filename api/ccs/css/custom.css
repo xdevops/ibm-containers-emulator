@@ -201,6 +201,11 @@ textarea {
   width: 5em;
 }
 
+.form-control.port {
+  width: 5em;
+  margin-right: 5px;
+}
+
 .addon-pad {
   padding-left: 10px;
   padding-right: 10px;
