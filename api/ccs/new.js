@@ -16,6 +16,7 @@ ccs.NewViewModel = function() {
         minContainers: ko.observable(2),
         maxContainers: ko.observable(2),
         desiredContainers: ko.observable(2),
+        availableSizes: ko.observableArray(),
 
         dockerRepos: ko.observableArray([
             {name: 'Your Image Registry', url: window.location.origin + '/v2/containers/images/json'},
@@ -99,6 +100,13 @@ ccs.NewViewModel = function() {
         }
 
         $.getJSON(docker_api_url, callback);
+    };
+
+    self.launchData.getUsage = function() {
+        var usage_api_url = ccs.endpoint + '/v2/containers/usage';
+        $.getJSON(usage_api_url, function(data) {
+            self.launchData.availableSizes(data.AvailableSizes);
+        });
     };
 
     self.launchData.launch = function() {
@@ -198,6 +206,7 @@ ccs.NewViewModel = function() {
 
     self.init = function(jso) {
         self.launchData.getContainerImages();
+        self.launchData.getUsage();
     };
 
 };

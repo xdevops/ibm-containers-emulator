@@ -444,7 +444,7 @@ def create_and_start_container(v):
     app.logger.debug("in create_and_start_container, request.data={0}".format(request.data))
 
     create_and_start_data = json.loads(request.data)
-    
+
     if create_and_start_data['Memory'] == 256:
         app.logger.debug("create_and_start_container overriding memory default")
         create_and_start_data['Memory'] = 0
@@ -455,9 +455,9 @@ def create_and_start_container(v):
         create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
 
     #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
-    if "Env" in create_and_start_data and create_and_start_data["Env"]: 
+    if "Env" in create_and_start_data and create_and_start_data["Env"]:
         create_and_start_data["Env"] = create_and_start_data["Env"].split(',')
-    
+
     r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
     if r.status_code != 201:
         app.logger.error("FAILED to create container in create_and_start_container: {0}".format(r.text))
@@ -474,10 +474,10 @@ def create_and_start_container(v):
 
     # CCSAPI now must also call /containers/{id}/start
     start_data = {}
-       
+
     # TEMPORARY kludge for elb
     global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
-    if "Env" in create_and_start_data and create_and_start_data["Env"]: 
+    if "Env" in create_and_start_data and create_and_start_data["Env"]:
         for var in create_and_start_data["Env"]:
             nv = var.split('=')
             if nv[0] == 'MOCK_ELB_PUBLIC_DOMAIN_NAME':
@@ -1207,7 +1207,7 @@ def create_group(v):
             return "Scaling group with that name already exists", 409
 
     #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
-    if "Env" in group and group["Env"]: 
+    if "Env" in group and group["Env"]:
         group["Env"] = group["Env"].split(',')
 
     group_id = GROUP_STORE.put_group(group)
@@ -1402,33 +1402,30 @@ def get_limits(v):
         app.logger.warn("Couldn't get containers list from Docker; {0}: {1}".format(r.status_code, r.text))
 
     # TODO get real VPU values from Docker instead of assuming each container 1 VCPU and 256 MB
-    result = {"Usage":      # Current usage
-              {"vcpu": running_containers,
-               "memory_MB": 256 * running_containers,
-               "running": running_containers,
-               "floating_ips": 0,
-               "containers": running_containers},
-              # This is the quota.  TODO Why are the usage figures and flavor values numbers and the quota strings!?!
-              "Limits": {"vcpu": "100",
-                         "memory_MB": "25600",
-                         "floating_ips": "24",
-                         "containers": "100"},
-              # These are the flavors
-              "AvailableSizes": {"1": {"memory_MB": 256,
-                                       "vcpus": 1,
-                                       "disk": 1,
-                                       "name": "m1.tiny"},
-                                 "3": {"memory_MB": 1024,
-                                       "vcpus": 4,
-                                       "disk": 10,
-                                       "name": "m1.medium"},
-                                 "2": {"memory_MB": 512,
-                                       "vcpus": 2, "disk": 2,
-                                       "name": "m1.small"},
-                                 "4": {"memory_MB": 2048,
-                                       "vcpus": 8,
-                                       "disk": 10,
-                                       "name": "m1.large"}}}
+    result = {
+        # the current runtime usage
+        "Usage": {
+            "vcpu": running_containers,
+            "memory_MB": 256 * running_containers,
+            "running": running_containers,
+            "floating_ips": 0,
+            "containers": running_containers
+        },
+        # This is the quota.  TODO Why are the usage figures and flavor values numbers and the quota strings!?!
+        "Limits": {
+            "vcpu": "100",
+            "memory_MB": "25600",
+            "floating_ips": "24",
+            "containers": "100"
+        },
+        # These are the flavors
+        "AvailableSizes": [
+            {"memory_MB": 256, "vcpus": 1, "disk": 1,  "name": "m1.tiny"},
+            {"memory_MB": 512, "vcpus": 2, "disk": 2,  "name": "m1.small"},
+            {"memory_MB": 1024,"vcpus": 4, "disk": 10, "name": "m1.medium"},
+            {"memory_MB": 2048,"vcpus": 8, "disk": 10, "name": "m1.large"}
+        ]
+    };
 
     return json.dumps(result), 200
 
