@@ -220,9 +220,6 @@ new:
         GET    /{version}/containers/groups/{name_or_id}/floating-ips
         POST   /{version}/containers/groups/{name_or_id}/maproute
         POST   /{version}/containers/groups/{name_or_id}/unmaproute
-
-TODO: 
-        decide if name_or_id == name | id | either
 ```
 
 7. Group containers URL
@@ -245,11 +242,7 @@ old:
        POST -H "X-Auth-Project-Id: project_id" /{version}/containers/{id}/start
        ... (i.e., all APIs)
 new:
-       GET/POST/PATCH /{version}/containers/...?tenant=project_id
-           or
        GET/POST/PATCH /{version}/{project_id}/contaners/...
-TODO:
-       which one to do?
 ```
 
 9. Accept: text/html
@@ -290,4 +283,26 @@ new:
                <script src="/ccs/application.js" type="text/javascript"></script>
              </body>
            </html>
+```
+
+10. Misc
+--------
+
+```
+NOTE: Maybe these should be deffered until after February?
+
+a) Is this API needed? Can it be removed?
+        GET /{version}/containers/groups/{name_or_id}/floating-ips
+        
+b) Instead of:
+        POST /{version}/containers/groups/{name_or_id}/maproute
+        POST /{version}/containers/groups/{name_or_id}/unmaproute
+   Should we instead do it more RESTfully:
+        POST /{version}/containers/groups/{name_or_id} -d "{ map or unmap request }"
+        
+c) Remove {version} from all URLs
+   old:
+        GET/POST/PATCH/DELETE /{version}/containers/...
+   new:
+        GET/POST/PATCH/DELETE -H "X-CCS-Version: {version}" /containers/...  
 ```
