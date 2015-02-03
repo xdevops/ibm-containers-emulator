@@ -1,85 +1,279 @@
 <div id="page-new" data-bind="if: visible">
-  <div class="panel panel-primary">
-    <div class="panel-heading">
-      <h4>Choose An Image To Launch</h4>
-      <h5>Your Image Registry URL can be found here: <span style="margin-left: 15px;" class="bg-white boxtext" data-bind="text: registryURL"></h5>
-    </div>
-    <div class="panel-body" data-bind="with: launchData">
-      <div class="row">
-        <div class="col-md-9" style="border-right: 1px solid grey;">
-          <form role="form">
-            <div class="form-group">
-              <label class="control-label" for="launchWizardImageRepository">Image Repository:</label>
-              <select id="launchWizardImageRespository" class="form-control" data-bind="options: dockerRepos, optionsText: 'name', value: selectedRepo, optionsCaption: 'Choose Image Repository', event:{ change: repoChanged} "></select>
+  <div data-bind="ifnot: step2">
+    <div class="panel panel-primary">
+      <div class="panel-body">
+        <div class="row" data-bind="with: launchData">
+          <div class="col-md-9">
+            <div class="row">
+              <div class="col-md-1"><image src="/ccs/css/images/launch-64x64.png"></div>
+              <div class="col-md-3 pad-top-10"><h4>Create A Container</h4></div>
+              <div class="col-md-8 pad-top-12">
+                <h5>Your Image Registry URL: <span style="margin-left: 15px;" class="bg-white boxtext" data-bind="text: $parent.registryURL"></h5>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="control-label" for="launchWizardFilter">Filter By Image Name:</label>
-              <div class="input-group">
-                <input type="text" id="launchWizardFilter" class="form-control" data-bind="value: filter, valueUpdate: 'afterkeydown', click: searchImageRepository" >
-                <div class="input-group-addon" style="cursor: pointer;">
-                  <span class="fa fa-lg fa-search addon-pad" data-bind="click: searchImageRepository"></span>
+            <hr>
+
+            <div class="row">
+              <div class="col-md-8">
+                <h4>Select image from your registry:</h4>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <div class="input-group">
+                    <input type="text" id="launchWizardFilter" class="form-control input-sm" data-bind="value: filter, valueUpdate: 'afterkeydown', click: searchImageRepository" >
+                    <div class="input-group-addon input-sm" style="cursor: pointer;">
+                      <span class="fa fa-lg fa-search addon-pad" data-bind="click: searchImageRepository"></span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </form>
 
-          <h4>Image Repository:</h4>
-          <div class="scrollable-div">
-            <table class="table table-striped" data-toggle="table" data-height="10">
+            <div class="scrollable-div">
+              <table class="table table-striped" data-toggle="table" data-height="8">
+                <thead>
+                  <tr class="bg-primary">
+                    <td class="col-sm-3">Name</td>
+                    <td class="col-sm-1">Tag</td>
+                    <td class="col-sm-4">ID</td>
+                    <td class="">Created</td>
+                    <td class="">Virtual Size</td>
+                  </tr>
+                </thead>
+                <tbody data-bind="foreach: filteredImages">
+                  <tr>
+                    <td class="field-ellipsis"><a data-bind="text: Name, click: $parent.setImage, tooltip: {title: Name}"></a></td>
+                    <td class="field-ellipsis"  style="width: 10%;" data-bind="text: Tag"></td>
+                    <td class="field-ellipsis" data-bind="text: Id"></td>
+                    <td class="field-ellipsis" data-bind="text: ccs.createdText(Created)"></td>
+                    <td class="field-ellipsis"><span data-bind="text: VirtualSize"></span> MB</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <hr>
+
+            <div class="row">
+              <div class="col-md-5">
+                <h4>Container Sizes Available</h4>
+                <p>The free Beta plan for Containers includes 2 GB of memory and up to 2 Public IP Addresses.</p>
+              </div>
+              <div class="col-md-7">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Size</th>
+                      <th>Memory</th>
+                      <th>VCPUs</th>
+                      <th>Disk Usage</th>
+                    </tr>
+                  </thead>
+                  <tbody data-bind="foreach: availableSizes">
+                    <tr>
+                      <td data-bind="text: name"></td>
+                      <td data-bind="text: memory_MB"></td>
+                      <td data-bind="text: vcpus"></td>
+                      <td data-bind="text: disk"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <hr>
+
+            <button class="btn btn-info">VIEW DOCS</button>
+            <button class="btn btn-info" style="margin-left: 10px;">TERMS</button>
+          </div>
+
+          <div class="col-md-3" style="border-left: 1px solid grey; background-color: #eee">
+            <form role="form">
+              <h4>Container Settings</h4>
+              <hr>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardGroup">Name your container/group:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardGroup" data-bind="value: name">
+              </div>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardImage">Selected image:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardImage" data-bind="value: imageName, disable: true">
+              </div>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardSize">Choose a container size:</label>
+                <select class="form-control input-sm" data-bind="options: availableSizes, optionsText: 'name', value: selectedSize, optionsCaption: 'Choose...'">
+                </select>
+              </div>
+
+              <!-- cheat. should be lanch section -->
+              <div style="padding-top: 20px;"></div>
+              <h4>Scale Settings</h4>
+              <hr>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardDeploymentMethod">Choose deployment method:</label>
+                <select class="form-control input-sm" id="launchWizardDeploymentMethod" data-bind="options: deploymentMethods, optionsText: 'label', value: selectedDeploymentMethod, optionsCaption: 'Choose...'">
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardDesired">Initial Instances:</label>
+                <input type="number" class="form-control input-sm num100 input-sm" id="launchWizardDesired" data-bind="value: desiredContainers">
+              </div>
+
+              <!-- cheat. should be lanch section -->
+              <div style="padding-top: 20px;"></div>
+              <h4>IP And Route Settings</h4>
+              <hr>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardAssignPublicIP">Assign a Public IP Address:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardAssignPublicIP" data-bind="value: publicIP, disable: isGroup">
+              </div>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardAssignRoutes">Assign Routes:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardAssignRoutes" data-bind="value: route, enable: isGroup">
+              </div>
+
+              <div class="form-group">
+                <button type="select" class="btn btn-primary" data-bind="click: $parent.next">Next</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-bind="if: step2">
+    <div class="panel panel-primary">
+      <div class="panel-body" data-bind="with: launchData">
+        <div class="col-md-4">
+          <div class="row">
+            <div class="col-md-3"><image src="/ccs/css/images/launch-64x64.png"></div>
+            <div class="col-md-9 pad-top-10"><h4>Create A Container</h4></div>
+          </div>
+          <hr>
+
+          <h5>Container Summary</h5>
+          <table class="table">
+            <tbody>
+              <tr>
+                <td>Image:</td>
+                <td data-bind="text:imageName"></td>
+              </tr>
+              <tr>
+                <td>Container/Group Name:</td>
+                <td data-bind="text: name"></td>
+              </tr>
+              <tr>
+                <td>Container Size:</td>
+                <td data-bind="text: selectedSize().name"></td>
+              </tr>
+              <tr>
+                <td>Scalable Group:</td>
+                <td data-bind="text: isGroupText"></td>
+              </tr>
+              <tr>
+                <td>Number of Instances:</td>
+                <td data-bind="text: desiredContainers"></td>
+              </tr>
+              <tr>
+                <td>Public IP Address:</td>
+                <td data-bind="text: publicIP"></td>
+              </tr>
+              <tr>
+                <td>Routes:</td>
+                <td data-bind="text: route"></td>
+              </tr>
+              <tr>
+                <td>Ports:</td>
+                <td data-bind="text: portList"></td>
+              </tr>
+              <tr>
+                <td>Volumes:</td>
+                <td>
+                  <!-- ko foreach: volumes -->
+                  <span data-bind="text: name"></span><br>
+                  <!-- /ko -->
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr>
+
+          <button class="btn btn-info">VIEW DOCS</button>
+          <button class="btn btn-info" style="margin-left: 10px;">TERMS</button>
+        </div>
+        <div class="col-md-8" style="border-left: 1px solid grey; background-color: #eee">
+          <form role="form">
+            <h4>Container Port Settings</h4>
+            <hr>
+
+            <div class="form-group">
+              <label class="control-label" for="launchWizardAdditionalPorts">Additional ports to expose:</label>
+              <div class="input-group" id="launchWizardAdditionalPorts">
+                <!-- ko foreach: additionalPorts -->
+                <input type="text" class="form-control port input-sm" data-bind="value: portnum, uniqueName: true">
+                <!-- /ko -->
+                <a class="pad-left-10" data-bind="click: addPort">+ Add Port</a>
+              </div>
+            </div>
+
+            <!-- cheat. should be lanch section -->
+            <div style="padding-top: 20px;"></div>
+            <h4>Storage Volumes</h4>
+            <hr>
+            <p>Existing volumes in your Bluemix space may be added by specifying a path on your container. If no volume currently exists, you can create a new one. Volumes are currently limited to 20GB.</p>
+
+            <table class="table">
               <thead>
-                <tr class="bg-primary">
-                  <td class="col-sm-3">Name</td>
-                  <td class="col-sm-1">Tag</td>
-                  <td class="col-sm-4">ID</td>
-                  <td class="">Created</td>
-                  <td class="">Virtual Size</td>
-                </tr>
+                <th class="col-md-4">Volume Name</th>
+                <th>Size</th>
+                <th class="col-md-4">Path on Container</th>
+                <th>Read Only</th>
+                <th>Action</th>
               </thead>
-              <tbody data-bind="foreach: filteredImages">
+              <tbody data-bind="foreach: volumes">
                 <tr>
-                  <td class="field-ellipsis"><a data-bind="text: Name, click: $parent.setImage, tooltip: {title: Name}"></a></td>
-                  <td class="field-ellipsis"  style="width: 10%;" data-bind="text: Tag"></td>
-                  <td class="field-ellipsis" data-bind="text: Id"></td>
-                  <td class="field-ellipsis" data-bind="text: ccs.createdText(Created)"></td>
-                  <td class="field-ellipsis"><span data-bind="text: VirtualSize"></span> MB</td>
+                  <td>
+                    <select class="form-control input-sm" data-bind="options: $parent.availableVolumes, value: name, optionsCaption: 'Select Volume...', click: $parent.updateVolumes ">
+                    </select>
+                  </td>
+                  <td><span class="form-control-static">20GB</span></td>
+                  <td>
+                    <input type="text" class="form-control input-sm" placeholder="/var/log/appdata" data-bind="value: path">
+                  </td>
+                  <td>
+                    <input type="checkbox" class="form-control" data-bind="checked: readOnly">
+                  </td>
+                  <td><span class="form-control-static fa fa-lg fa-times-circle-o" data-bind="click: $parent.deleteVolume"></td>
                 </tr>
               </tbody>
             </table>
-          </div>
-        </div>
+            <a class="pull-right" data-bind="click: showVolumesDialog">Manage Volumes</a>
 
-        <div class="col-md-3">
-          <form role="form">
-            <div class="form-group">
-              <label class="control-label" for="launchWizardGroup">Container / Group Name:</label>
-              <input type="text" class="form-control" id="launchWizardGroup" data-bind="value: name">
-            </div>
+            <!-- cheat. should be lanch section -->
+            <div style="padding-top: 20px;"></div>
+            <h4>Service Binding</h4>
+            <hr>
+            <p>Bluemix Services can be bound to your containers upon launch only if they are already bound to a CloudFoundry App in your Organizational Dashboard.</p>
 
-            <div class="form-group">
-              <label class="control-label" for="launchWizardImage">Selected Image:</label>
-              <input type="text" class="form-control" id="launchWizardImage" data-bind="value: imageName, disable: true">
-            </div>
-
-            <div class="form-group">
-              <label class="control-label" for="launchWizardIsGroup">
-                <input type="checkbox" data-bind="checked: isGroup"> Launch As Scaling Group?
-              </label>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label class="control-label" for="launchWizardCFApp">Existing Cloud Foundry Apps:</label>
+                <select class="form-control input-sm" id="launchWizardCFApp" data-bind="options: $parent.availabeCFApps, optionsCaption: 'Leave unassigned' "></select>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label class="control-label" for="launchWizardMin">Minimum # Containers:</label>
-              <input type="number" class="form-control num100" id="launchWizardMin" data-bind="value: minContainers, enable: isGroup">
-            </div>
-            <div class="form-group">
-              <label class="control-label" for="launchWizardMax">Maximum # Containers:</label>
-              <input type="number" class="form-control num100" id="launchWizardMax" data-bind="value: maxContainers, enable: isGroup">
-            </div>
-            <div class="form-group">
-              <label class="control-label" for="launchWizardDesired">Desired # Containers:</label>
-              <input type="number" class="form-control num100" id="launchWizardDesired" data-bind="value: desiredContainers, enable: isGroup">
-            </div>
-            <div class="form-group">
-              <button type="select" class="btn btn-primary" data-bind="click: launch, text: launchText"></button>
+            <div style="display: block;">
+              <button class="btn btn-default" data-bind="click: $parent.back">Back</button>
+              <button class="btn btn-info" data-bind="click: launch">Launch</button>
             </div>
           </form>
         </div>

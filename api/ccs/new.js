@@ -5,6 +5,32 @@ ccs.NewViewModel = function() {
     self.visible = ko.observable(false);
 
     self.registryURL = ccs.endpoint + '/v2/containers/images';
+
+    self.step2 = ko.observable(false); // wizard page
+    self.next = function() {
+        self.step2(true);
+    };
+
+    self.back = function() {
+        self.step2(false);
+    };
+
+    self.Port = function() {
+        return { portnum: undefined };
+    };
+
+    self.Volume = function() {
+        return {
+            name: ko.observable(),
+            size: 20,
+            path: ko.observable(),
+            readOnly: ko.observable(),
+        };
+    };
+
+    // TODO: API call needed to get available CF Apps
+    self.availableCFApps = ko.observableArray();
+
     // editable fields for launch wizard
     self.launchData = {
         name: ko.observable(),
@@ -12,11 +38,27 @@ ccs.NewViewModel = function() {
         image: ko.observable(),
         imageName: ko.observable(),
         images: ko.observableArray(),
-        isGroup: ko.observable(true),
         minContainers: ko.observable(2),
         maxContainers: ko.observable(2),
         desiredContainers: ko.observable(2),
-
+        availableSizes: ko.observableArray(),
+        selectedSize: ko.observable(),
+        deploymentMethods: [
+            {name: 'container', label: 'Deploy as a single container'},
+            {name: 'group', label: 'Deploy as a scalable group'}
+        ],
+        selectedDeploymentMethod: ko.observable(),
+        publicIP: ko.observable('--'),
+        ports: ko.observableArray(),
+        additionalPorts: ko.observableArray(),
+        volumes: ko.observableArray(),
+        availableVolumes: ko.observableArray([
+            'Exiting Volume 1',
+            'Exiting Volume 2',
+            'Exiting Volume 3',
+            'Exiting Volume 4',
+            'Exiting Volume 5',
+        ]),
         dockerRepos: ko.observableArray([
             {name: 'Your Image Registry', url: window.location.origin + '/v2/containers/images/json'},
             {name: 'DockerHub', url: window.location.protocol + '//' + window.location.hostname + ':4243/images/search?term='}
@@ -24,6 +66,47 @@ ccs.NewViewModel = function() {
         selectedRepo: ko.observable()
     };
     self.launchData.selectedRepo(self.launchData.dockerRepos()[0]);
+
+    self.launchData.isGroup = ko.pureComputed(function() {
+        return self.launchData.selectedDeploymentMethod().name == 'group';
+    });
+
+    self.launchData.isGroupText = ko.pureComputed(function() {
+        return self.launchData.selectedDeploymentMethod().name == 'group' ? 'Yes' : 'No';
+    });
+
+    self.launchData.route = ko.pureComputed(function() {
+        if (self.launchData.selectedDeploymentMethod().name == 'container') return '--';
+
+        var host = self.launchData.name();
+        return host ? host + '.mybluemix.net' : '--';
+    });
+
+    self.launchData.addPort = function() {
+        self.launchData.additionalPorts.push(new self.Port());
+    };
+
+    self.launchData.portList = ko.pureComputed(function() {
+        var ports = self.launchData.ports().join(", ");
+        self.launchData.additionalPorts().forEach(function(port) {
+            if (port.portnum) ports += ', ' + port.portnum;
+        });
+
+        return ports;
+    });
+
+    self.launchData.deleteVolume = function(v) {
+        v.name('');
+        v.path('');
+    };
+
+    self.launchData.showVolumesDialog = function() {
+
+    };
+
+    self.launchData.updateVolumes = function() {
+        console.log(self.launchData.volumes());
+    }
 
     self.launchData.filteredImages = ko.pureComputed(function() {
         var filter = self.launchData.filter();
@@ -39,7 +122,7 @@ ccs.NewViewModel = function() {
 
     self.launchData.setImage = function(image) {
         self.launchData.image(image);
-        self.launchData.imageName(image.Name);
+        self.launchData.imageName(image.Name + ':' + image.Tag);
     };
 
     self.launchData.searchImageRepository = function() {
@@ -99,6 +182,24 @@ ccs.NewViewModel = function() {
         }
 
         $.getJSON(docker_api_url, callback);
+    };
+
+    self.launchData.getUsage = function() {
+        var usage_api_url = ccs.endpoint + '/v2/containers/usage';
+        $.getJSON(usage_api_url, function(data) {
+            var sizes = [];
+
+            data.AvailableSizes.forEach(function(size) {
+                size.vcpus += ' CPU';
+                size.disk += ' GB';
+                if (size.memory_MB >= 1024)
+                    size.memory_MB = (size.memory_MB / 1024) + ' GB';
+                else
+                    size.memory_MB += ' MB';
+            });
+            self.launchData.availableSizes(data.AvailableSizes);
+            self.launchData.selectedSize(self.launchData.availableSizes()[0]);
+        });
     };
 
     self.launchData.launch = function() {
@@ -197,7 +298,19 @@ ccs.NewViewModel = function() {
     });
 
     self.init = function(jso) {
+        self.step2(false);
+
         self.launchData.getContainerImages();
+        self.launchData.getUsage();
+        self.launchData.selectedDeploymentMethod(self.launchData.deploymentMethods[0]);
+        self.launchData.ports([80, 443]);
+        self.launchData.additionalPorts.push(new self.Port());
+
+        self.launchData.volumes.push(new self.Volume());
+        self.launchData.volumes.push(new self.Volume());
+        self.launchData.volumes.push(new self.Volume());
+        self.launchData.volumes.push(new self.Volume());
+        self.launchData.volumes.push(new self.Volume());
     };
 
 };
