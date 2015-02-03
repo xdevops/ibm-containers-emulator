@@ -79,6 +79,7 @@ new:
 
 ```
 ## GET /{version}/containers/json{?all,limit,size}
+## GET /{version}/containers/groups/{name}/containers
 old:
         "Status": "Running", /* 'Running' | 'NOSTATE' | 'Shutdown' | 'Crashed' | 'Paused' | 'Suspended' */
 new:
@@ -90,12 +91,6 @@ old:
             "Status": "Running", 
             ... 
             },
-new:
-        "ContainerState": "Running",
-
-## GET /{version}/containers/groups/{name}/containers
-old:
-        "Status": "Running",
 new:
         "ContainerState": "Running",
 ```
@@ -226,8 +221,8 @@ new:
         POST   /{version}/containers/groups/{name_or_id}/maproute
         POST   /{version}/containers/groups/{name_or_id}/unmaproute
 
-note: 
-        name_or_id == name | id | either
+TODO: 
+        decide if name_or_id == name | id | either
 ```
 
 7. Group containers URL
@@ -245,12 +240,16 @@ new:
 
 ```
 old:
-       GET /{version}/containers/json{?all,limit,size)
-       POST   /{version}/containers/create{?name}
-       POST   /{version}/containers/{id}/start
+       GET -H "X-Auth-Project-Id: project_id" /{version}/containers/json{?all,limit,size)
+       POST -H "X-Auth-Project-Id: project_id" /{version}/containers/create{?name}
+       POST -H "X-Auth-Project-Id: project_id" /{version}/containers/{id}/start
        ... (i.e., all APIs)
 new:
-       optional ?tenant=space_id
+       GET/POST/PATCH /{version}/containers/...?tenant=project_id
+           or
+       GET/POST/PATCH /{version}/{project_id}/contaners/...
+TODO:
+       which one to do?
 ```
 
 9. Accept: text/html
@@ -266,7 +265,7 @@ old:
        GET -H "Accept: text/html" /{version}/containers/groups/{name}
        GET -H "Accept: text/html" /{version}/containers/groups/{name}/containers
        returns:
-           {JSON_RESPONCE}
+           {JSON_RESPONSE}
 new:
        GET -H "Accept: text/html" /{version}/containers/json{?all,limit,size}
        GET -H "Accept: text/html" /{version}/containers/{id}/json
@@ -285,7 +284,7 @@ new:
              <body>
                <div id="spa" style="display:none">
                  <span id="payload" resource-type="containers" resource-url="http://localhost:5000/v2/containers/json">
-                   {JSON_RESPONCE}
+                   {JSON_RESPONSE}
                  </span>
                </div>
                <script src="/ccs/application.js" type="text/javascript"></script>
