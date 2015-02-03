@@ -1,3 +1,6 @@
+Current API Listing
+===================
+
 ```
 CCS API                                                     Docker API
 -------------------------------------------------------     ------------------------------------------------------------------------------------
@@ -136,7 +139,73 @@ new:
             },
 ```
 
-5. Group URLs
+5. "AvailableSizes"
+-------------------
+
+```
+## GET /{version}/containers/usage
+old:
+        {
+            "Limits": {
+                "containers": 8,
+                "vcpu": 8,
+                "memory_MB": 2048,
+                "floating_ips": 2
+                },
+            "Usage": {
+                "containers": 5,
+                "running": 4,
+                "vcpu": 4,
+                "memory_MB": 1024,
+                "floating_ips": 2
+                }
+        }
+new:
+        {
+            "Limits": {
+                "containers": 8,
+                "vcpu": 8,
+                "memory_MB": 2048,
+                "floating_ips": 2
+                },
+            "Usage": {
+                "containers": 5,
+                "running": 4,
+                "vcpu": 4,
+                "memory_MB": 1024,
+                "floating_ips": 2
+                }
+            "AvailableSizes": [
+                {
+                    "memory_MB": 256,
+                    "vcpus": 1,
+                    "disk": 1,
+                    "name": "m1.tiny"
+                    },
+                {
+                    "memory_MB": 1024,
+                    "vcpus": 4,
+                    "disk": 10,
+                    "name": "m1.medium"
+                    },
+                {
+                    "memory_MB": 512,
+                    "vcpus": 2,
+                    "disk": 2,
+                    "name": "m1.small"
+                    },
+                {
+                    "memory_MB": 2048,
+                    "vcpus": 8,
+                    "disk": 10,
+                    "name": "m1.large"
+                    }
+                ]
+            }
+        }
+```
+
+6. Group URLs
 -------------
 
 ```
@@ -161,7 +230,7 @@ note:
         name_or_id == name | id | either
 ```
 
-6. Group containers URL
+7. Group containers URL
 -----------------------
 
 ```
@@ -171,7 +240,7 @@ new:
         GET /{version}/containers/json?group={name_or_id}
 ```
 
-7. Tenants
+8. Tenants
 ----------
 
 ```
@@ -184,3 +253,42 @@ new:
        optional ?tenant=space_id
 ```
 
+9. Accept: text/html
+--------------------
+
+```
+old:
+       GET -H "Accept: text/html" /{version}/containers/json{?all,limit,size}
+       GET -H "Accept: text/html" /{version}/containers/{id}/json
+       GET -H "Accept: text/html" /{version}/containers/{id}/logs{?stdout}
+       GET -H "Accept: text/html" /{version}/containers/images/json
+       GET -H "Accept: text/html" /{version}/containers/groups
+       GET -H "Accept: text/html" /{version}/containers/groups/{name}
+       GET -H "Accept: text/html" /{version}/containers/groups/{name}/containers
+       returns:
+           {JSON_RESPONCE}
+new:
+       GET -H "Accept: text/html" /{version}/containers/json{?all,limit,size}
+       GET -H "Accept: text/html" /{version}/containers/{id}/json
+       GET -H "Accept: text/html" /{version}/containers/{id}/logs{?stdout}
+       GET -H "Accept: text/html" /{version}/containers/images/json
+       GET -H "Accept: text/html" /{version}/containers/groups
+       GET -H "Accept: text/html" /{version}/containers/groups/{name}
+       GET -H "Accept: text/html" /{version}/containers/groups/{name}/containers
+       returns:
+           <!DOCTYPE html>
+           <html lang="en">
+             <head>
+               <meta charset="UTF-8">
+               <title></title>
+             </head>
+             <body>
+               <div id="spa" style="display:none">
+                 <span id="payload" resource-type="containers" resource-url="http://localhost:5000/v2/containers/json">
+                   {JSON_RESPONCE}
+                 </span>
+               </div>
+               <script src="/ccs/application.js" type="text/javascript"></script>
+             </body>
+           </html>
+```
