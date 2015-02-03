@@ -237,12 +237,12 @@ new:
 
 ```
 old:
-       GET -H "X-Auth-Project-Id: project_id" /{version}/containers/json{?all,limit,size)
-       POST -H "X-Auth-Project-Id: project_id" /{version}/containers/create{?name}
-       POST -H "X-Auth-Project-Id: project_id" /{version}/containers/{id}/start
+       GET -H "X-Auth-Project-Id: space_id" /{version}/containers/json{?all,limit,size)
+       POST -H "X-Auth-Project-Id: space_id" /{version}/containers/create{?name}
+       POST -H "X-Auth-Project-Id: space_id" /{version}/containers/{id}/start
        ... (i.e., all APIs)
 new:
-       GET/POST/PATCH /{version}/{project_id}/contaners/...
+       GET/POST/PATCH /{version}/{space_id}/containers/...
 ```
 
 9. Accept: text/html
