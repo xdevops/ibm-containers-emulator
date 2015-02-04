@@ -60,13 +60,13 @@ HTML_TEMPLATE=\
 </html>
 '''
 
-def get_response_text(status_code, response_json, resource_type):
+def get_response_text(status_code, response_json_string, resource_type):
     resource_url = request.url
     best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
     if best == 'application/json' or status_code != 200:
-        return response_json, status_code
+        return response_json_string, status_code
     else:
-        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type, resource_url=resource_url), status_code
+        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json_string, resource_type=resource_type, resource_url=resource_url), status_code
 
 def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
@@ -99,6 +99,18 @@ def get_container_state(container_json):
         else:
             return "Shutdown"
     return "NOSTATE"
+
+def filter_for_group(name_or_id, containers):
+    group = GROUP_STORE.get_group(name_or_id)
+    if not group:
+        app.logger.warning("get_group_containers failed, no group with name or id {0}".format(name_or_id))
+        return "No such group name or id {0}".format(name_or_id), 404
+    group_prefix = group["Name"] + '_'
+    group_containers = []
+    for container in containers:
+        if container["Name"].startswith(group_prefix):
+            group_containers.append(container)
+    return group_containers, 200
 
 def add_group(container_json):
     groups = GROUP_STORE.list_groups()
@@ -189,9 +201,22 @@ def get_token(v):
 #@token_required
 def get_running_containers(v):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    containers = r.json()
-    status_code, response_json = fixup_containers_response(containers) if r.status_code == 200 else (r.status_code, r.text)
-    return get_response_text(status_code, json.dumps(response_json), 'containers')
+    if r.status_code != 200:
+        status_code = r.status_code
+        response_json_string = r.text
+    else:
+        status_code, containers = fixup_containers_response(r.json())
+        if status_code != 200:
+            response_json_string = containers
+        else:
+            group_name_or_id = request.args.get('group')
+            if group_name_or_id:
+                containers, status_code = filter_for_group(group_name_or_id, containers)
+            if status_code != 200:
+                response_json_string = containers
+            else:    
+                response_json_string = json.dumps(containers)
+    return get_response_text(status_code, response_json_string, 'containers')
 
 """
 ## POST /{version}/containers/create{?name}
@@ -475,6 +500,7 @@ def create_group(v):
 @app.route('/<v>/containers/groups/<name_or_id>', methods=['PATCH'])
 #@token_required
 def update_group(v, name_or_id):
+    print "update_group data: %s" % request.data
     new_group = json.loads(request.data)
     group = GROUP_STORE.get_group(name_or_id)
     if not group:
@@ -506,37 +532,10 @@ def get_group_info(v, name_or_id):
         return "No such name or id {0}".format(name_or_id), 404
     return get_response_text(200, json.dumps(group), 'group')
 
-"""
-## GET /{version}/containers/groups/{name_or_id}/containers
-"""
-#TODO move to /containers/json
-@app.route('/<v>/containers/groups/<name_or_id>/containers', methods=['GET'])
-#@token_required
-def group_get_containers(v, name_or_id):
-    r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
-    if r.status_code != 200:
-        return r.text, r.status_code
-    status_code, running_containers = fixup_containers_response(r.json())
-    if status_code != 200:
-        return running_containers, status_code
-
-    group = GROUP_STORE.get_group(name_or_id)
-    if not group:
-        app.logger.warning("get_group_containers failed, no group with name or id {0}".format(name_or_id))
-        return "No such name or id {0}".format(name_or_id), 404
-
-    group_prefix = group["Name"] + '_'
-    response = []
-    for container in running_containers:
-        if container["Name"].startswith(group_prefix):
-            container_info = {
-                "Name": container["Name"],
-                "Ip": container["NetworkSettings"]["IpAddress"],
-                "Status": container["Status"],
-                "Id": container["Id"],
-            }
-            response.append(container_info)
-    return get_response_text(status_code, json.dumps(response), 'containers')
+#"""
+### GET /{version}/containers/groups/{name_or_id}/containers
+#"""
+# moved to /containers/json
 
 #"""
 ### GET /{version}/containers/groups/{id}/floating-ips
@@ -557,19 +556,19 @@ def delete_group(v, name_or_id):
     return "", 204
 
 """
-## POST /{version}/containers/groups/maproute{?name}
+## POST /{version}/containers/groups/<name_or_id>/maproute
 """
-@app.route('/<v>/containers/groups/maproute', methods=['POST'])
+@app.route('/<v>/containers/groups/<name_or_id>/maproute', methods=['POST'])
 #@token_required
-def maproute_containers_group(v):
+def maproute_containers_group(v, name_or_id):
     return "TODO", 201
 
 """
-## POST /{version}/containers/groups/unmaproute{?name}
+## POST /{version}/containers/groups/<name_or_id>/unmaproute
 """
-@app.route('/<v>/containers/groups/unmaproute', methods=['POST'])
+@app.route('/<v>/containers/groups/<name_or_id>/unmaproute', methods=['POST'])
 #@token_required
-def unmap_route_containers_group(v):
+def unmap_route_containers_group(v, name_or_id):
     return "TODO", 201
 
 """
