@@ -100,6 +100,14 @@ textarea {
   padding: 0;
   margin: 0;
 }
+.input-big-number {
+  font-size: 1.5em;
+  /* color: #00ccff; */
+  font-weight: bold;
+  /* text-align: center; */
+  padding: 0 0 0 10px;
+  margin: 0;
+}
 
 .mon-status {
   background-color: green;

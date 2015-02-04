@@ -90,13 +90,13 @@ ccs.GroupViewModel = function() {
 
     self.allowedActions = ko.pureComputed(function() {
         var actions = [];
-        var state = self.status;
+        var state = self.status();
 
         if (state == 'ACTIVE')
             actions = [
-                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {text: 'delete', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
                 {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
-                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
+                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
                 {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
                 {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
             ];
