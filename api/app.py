@@ -11,14 +11,13 @@ We use [API Blueprint](http://apiblueprint.org/) for formatting and describing t
 
 """
 import os, requests, json
-from flask import Flask, request, Response
+from flask import Flask, request
 #from flask.ext.cors import CORS
 from string import Template
 from groupstore import FileGroupStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
 import logging
 import sys
-import datetime
 
 
 """
@@ -85,83 +84,30 @@ NUM_HOST_PORTS = 9
 AVAILABLE_HOST_PORTS = [ True, True, True, True, True, True, True, True, True ]
 FIRST_HOST_PORT = 6001
 
-"""
-killed docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": -1,
-    "FinishedAt": "2015-01-18T20:30:37.512283287Z",
-    "OOMKilled": false,
-    "Paused": false,
-    "Pid": 0,
-    "Restarting": false,
-    "Running": false,
-    "StartedAt": "2015-01-18T20:29:07.117411842Z"
-  },
-
-running docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": 0,
-    "FinishedAt": "0001-01-01T00:00:00Z",
-    "OOMKilled": false,
-    "Paused": false,
-    "Pid": 5197,
-    "Restarting": false,
-    "Running": true,
-    "StartedAt": "2015-01-18T20:29:07.402833784Z"
-  },
-
-paused docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": 0,
-    "FinishedAt": "0001-01-01T00:00:00Z",
-    "OOMKilled": false,
-    "Paused": true,
-    "Pid": 6284,
-    "Restarting": false,
-    "Running": true,
-    "StartedAt": "2015-01-18T20:30:07.220679896Z"
-  },
-
-stopped/exited docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": 0,
-    "FinishedAt": "2015-01-19T18:09:53.691721551Z",
-    "OOMKilled": false,
-    "Paused": false,
-    "Pid": 0,
-    "Restarting": false,
-    "Running": false,
-    "StartedAt": "2015-01-19T18:09:53.67503787Z"
-  },
-"""
 def get_container_state(container_json):
     # Return one of: 'Running' | 'NOSTATE' | 'Shutdown' | 'Crashed' | 'Paused' | 'Suspended'
-    # Note: 'Paused' and "Running' are clear but,
-    #  how do "docker create", "docker kill", "docker stop" and "exited container" map to 'Shutdown', 'Crashed', 'Suspended', 'NOSTATE' ?
-    #  Answers from Paulo:
-    #    1. 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
-    #    2. 'Shutdown' for stopped container (/v/container/id/stop)
-    #    3. 'Crashed' for container that has exited
-    if container_json["State"]["Paused"]:
+    #    Note: 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
+    if container_json["State"].get("Paused"):
         return "Paused"
-    if not container_json["State"]["Restarting"]:
-        if container_json["State"]["Running"]:
+    if not container_json["State"].get("Restarting"):
+        if container_json["State"].get("Running"):
             return "Running"
-        if container_json["State"]["OOMKilled"]: # Out Of Memory"
+        if container_json["State"].get("OOMKilled"): # Out Of Memory"
             return "Crashed"
-        if container_json["State"]["ExitCode"]:
+        if container_json["State"].get("ExitCode") and container_json["State"].get("Error"):
             return "Crashed"
         else:
             return "Shutdown"
     return "NOSTATE"
+
+def add_group(container_json):
+    groups = GROUP_STORE.list_groups()
+    for g in groups:
+        group_prefix = g["Name"] + '_'
+        n = container_json["Name"][1:] if container_json["Name"].startswith("/") else container_json["Name"]
+        if n.startswith(group_prefix):
+            container_json["Group"] = { "Name": g["Name"], "Id": g["Id"] }
+            return
 
 def fixup_containers_response(containers_json):
     for container in containers_json:
@@ -177,13 +123,20 @@ def fixup_containers_response(containers_json):
         container["NetworkSettings"] = {}
         container["NetworkSettings"]["IpAddress"] = container_json["NetworkSettings"]["IPAddress"]
         container["NetworkSettings"]["PublicIpAddress"] = ""
-        container["Status"] = get_container_state(container_json) #TODO Remove deprecated
         container["ContainerState"] = get_container_state(container_json)
+        add_group(container)
         # Skipping the following because I don't know what they are or where to find their values:
         # container["SizeRootFs"]
         # container["SizeRw"]
 
     return 200, containers_json
+
+def fixup_container_info_response(container_json):
+    # The following properties are ccsapi extensions
+    container_json["ContainerState"] = get_container_state(container_json)
+    add_group(container_json)
+
+    return 200, container_json
 
 def fixup_images_response(images_json):
     app.logger.debug("REACHED fixup_images_response, images_json={0}".format(images_json))
@@ -237,14 +190,6 @@ def get_token(v):
 def get_running_containers(v):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
     containers = r.json()
-    groups = GROUP_STORE.list_groups()
-    for c in containers:
-        for g in groups:
-            group_prefix = '/' + g["Name"] + '_'
-            for n in c["Names"]:
-                if n.startswith(group_prefix):
-                    c["Group"] = { "Name": g["Name"], "Id": g["Id"] }
-
     status_code, response_json = fixup_containers_response(containers) if r.status_code == 200 else (r.status_code, r.text)
     return get_response_text(status_code, json.dumps(response_json), 'containers')
 
@@ -266,10 +211,6 @@ def create_and_start_container(v):
     # of always injecting a host if not specified...
     if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
         create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
-
-    #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
-    if "Env" in create_and_start_data and create_and_start_data["Env"]:
-        create_and_start_data["Env"] = create_and_start_data["Env"].split(',')
 
     r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
     if r.status_code != 201:
@@ -315,7 +256,9 @@ def create_and_start_container(v):
 #@token_required
 def show_container_info(v,id):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    return get_response_text(r.status_code, r.text, 'container')
+    container = r.json()
+    status_code, response_json = fixup_container_info_response(container) if r.status_code == 200 else (r.status_code, r.text)
+    return get_response_text(status_code, json.dumps(response_json), 'container')
 
 """
 ## POST /{version}/containers/{id}/start
@@ -487,10 +430,6 @@ def release_floating_ips(v,ip):
     if ip.startswith("localhost:"):
         host_port = int(ip[len("localhost:"):])
         AVAILABLE_HOST_PORTS[host_port - FIRST_HOST_PORT] = True
-
-    # creds,msg = parse_token_for_creds(request.headers)
-    # if creds == None:
-    #     return INVALID_TOKEN_FORMAT + msg,401
     return "", 204
 
 """
@@ -514,10 +453,6 @@ def create_group(v):
     for g in GROUP_STORE.list_groups():
         if g["Name"] == group["Name"]:
             return "Scaling group with that name already exists", 409
-
-    #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
-    if "Env" in group and group["Env"]:
-        group["Env"] = group["Env"].split(',')
 
     group_id = GROUP_STORE.put_group(group)
     response = {"Id": group_id, "Warnings":[]}
