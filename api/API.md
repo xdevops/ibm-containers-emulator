@@ -207,14 +207,12 @@ new:
 old:
         GET    /{version}/containers/groups/{name}
         PATCH  /{version}/containers/groups/{name}
-        GET    /{version}/containers/groups/{name}/containers
         DELETE /{version}/containers/groups/{id}
         POST   /{version}/containers/groups/maproute{?name}
         POST   /{version}/containers/groups/unmaproute{?name}
 new:
         GET    /{version}/containers/groups/{name_or_id}
         PATCH  /{version}/containers/groups/{name_or_id}
-        GET    /{version}/containers/groups/{name_or_id}/containers
         DELETE /{version}/containers/groups/{name_or_id}
         POST   /{version}/containers/groups/{name_or_id}/maproute
         POST   /{version}/containers/groups/{name_or_id}/unmaproute
