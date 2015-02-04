@@ -124,7 +124,7 @@ a.list-group-item:hover, a.list-group-item:focus {
 }
 
 .panel-body p, .panel-body a, .panel-body label {
-    color: #2c3e50;
+    /* color: #2c3e50; */
 }
 
 .panel-body a:hover, .panel-body a:focus {
@@ -137,7 +137,7 @@ a.list-group-item:hover, a.list-group-item:focus {
 }
 
 .container-info {
-    min-height: 300px !important;
+    height: 170px !important;
 }
 
 label.container-label {
@@ -145,7 +145,12 @@ label.container-label {
 }
 
 .container-image {
-    padding-bottom: 0;
+    padding-top: 20px;
+    padding-bottom: 10px;
+}
+
+.container-state {
+    font-size: 1.1em;
 }
 
 .bg-container {

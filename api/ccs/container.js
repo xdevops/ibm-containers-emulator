@@ -125,43 +125,43 @@ ccs.ContainerViewModel = function() {
 
         if (state == 'Running')
             actions = [
-                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: false},
-                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
-                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
-                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
-                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
+                {text: 'delete', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: false},
+                {text: 'stop', css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
+                {text: 'pause', css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
+                {text: 'restart', css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
+                {text: 'start', css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
             ];
         else if (state == 'UNKNOWN')
             actions = [
-                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
-                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: true},
-                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
-                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
-                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
+                {text: 'delete', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {text: 'stop', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doStop, enable: true},
+                {text: 'pause', css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: true},
+                {text: 'restart', css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {text: 'start', css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
             ];
         else if (state == 'Paused')
             actions = [
-                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
-                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
-                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
-                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
-                {css: "pull-right fa fa-lg fa-play", method: self.doUnpause, enable: true} // UNPAUSE - not Start
+                {text: 'delete', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {text: 'stop', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doStop, enable: false},
+                {text: 'pause', css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
+                {text: 'restart', css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: false},
+                {text: 'unpause', css: "pull-right fa fa-lg fa-play", method: self.doUnpause, enable: true} // UNPAUSE - not Start
             ];
         else if (state == 'Crashed')
             actions = [
-                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
-                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
-                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
-                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
-                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
+                {text: 'delete', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {text: 'stop', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doStop, enable: false},
+                {text: 'pause', css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
+                {text: 'restart', css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {text: 'start', css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: false}
             ];
         else if (state == 'Shutdown')
             actions = [
-                {css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
-                {css: "pull-right fa fa-lg fa-stop", method: self.doStop, enable: false},
-                {css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
-                {css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
-                {css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
+                {text: 'delete', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doDelete, enable: true},
+                {text: 'stop', css: "pull-right fa fa-lg fa-inverse fa-times", method: self.doStop, enable: false},
+                {text: 'pause', css: "pull-right fa fa-lg fa-pause", method: self.doPause, enable: false},
+                {text: 'restart', css: "pull-right fa fa-lg fa-repeat", method: self.doRestart, enable: true},
+                {text: 'start', css: "pull-right fa fa-lg fa-play", method: self.doStart, enable: true}
             ];
         else
             ;

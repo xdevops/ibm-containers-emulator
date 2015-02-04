@@ -1,88 +1,82 @@
 <div id="page-container" data-bind="if: visible">
   <div class="panel panel-primary">
     <div class="panel-heading">
-      <!-- the media object in bootstrap 3.3 doesn't layout like we'd want so we have to reproduce it here -->
       <div class="row">
-        <div class="col-md-1">
-          <a class="media-left" href="#">
-            <img src="http://placehold.it/64x64" alt="placeholder">
-          </a>
-        </div>
-        <div class="col-md-11">
-          <div class="col-md-6">
-            <h1><span data-bind="text: name"></h1>
-          </div>
-          <div class="col-md-6">
-            <div class="btn-toolbar pull-right" role="toolbar">
-              <div class="btn-group">
-                <div style="margin: 1.5em 0;"data-bind="foreach: allowedActions">
-                  <button class="btn btn-default" data-bind="click: method, css: {disabled: enable == false}"><span data-bind="css: css"></span></button>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="col-md-1"><image src="/ccs/css/images/container-64x64.jpg"></div>
+        <div class="col-md-3">
+          <h1><span data-bind="text: name"></h1>
         </div>
       </div>
     </div>
     <div class="panel-body">
       <div class="row deployment-row">
         <!-- container info widget -->
-        <div class="col-md-6">
-            <div class="col-md-6 bg-container container-info">
-              <img class="center-block container-image" src="/ccs/css/images/container-icon.png" alt="container icon">
-              <p class="text-center" data-bind="text: name"></p>
-              <p>IMAGE: <span data-bind="text: image"></span></p>
-              <p>PUBLIC IP: <span data-bind="text:publicIP"></span></p>
-              <p>PRIVATE IP: <span class="text-ellipsis" data-bind="text:privateIP"></span></p>
-            </div>
-            <div class="col-md-6 bg-highlight container-info">
-              <form role="form" style="margin-top: 35px;">
-                <div class="form-group">
-                  <label for="containerTotalCPU" class="container-label">TOTAL CPU</label>
-                  <p id="containerTotalCPU" class="big-number"><span data-bind="text: cpu"></span> %</p>
-                </div>
+        <div class="col-md-12">
+          <!-- basic info -->
+          <div class="col-md-2 bg-container container-info">
+            <img class="center-block container-image" src="/ccs/css/images/container-64x64.jpg" alt="container icon">
+            <p class="text-center">
+              <strong><span class="text-uppercase" data-bind="text: name"></span></strong><br>
+              Public IP: <span data-bind="text:publicIP"></span><br>
+              Private IP: <span data-bind="text:privateIP"></span>
+            </p>
+          </div>
+          <!-- basic container stats -->
+          <div class="col-md-2 bg-highlight container-info">
+            <form role="form" style="margin-top: 20px;">
+              <div class="form-group">
+                <label for="containerTotalCPU" class="container-label">TOTAL CPU</label>
+                <p class="big-number" id="containerTotalCPU"><span data-bind="text: cpu"></span> %</p>
+              </div>
 
-                <div class="form-group">
-                  <label for="containerTotalMemory" class="container-label">TOTAL MEMORY</label>
-                  <p class="big-number" id="containerTotalMemory">
-                    <span data-bind="text: memory"></span>
-                    <span>GB</span>
-                  </p>
-                </div>
+              <div class="form-group">
+                <label for="containerTotalMemory" class="container-label">TOTAL MEMORY</label>
+                <p class="big-number" id="containerTotalMemory">
+                  <span data-bind="text: memory"></span>
+                  <span>GB</span>
+                </p>
+              </div>
+            </form>
+          </div>
+          <!-- monitoring widget -->
+          <div class="col-md-5">
+            <div class="row" data-bind="with: monitor">
+              <div class="mainChartContainer col-md-9">
+                <span class="mChartTitle text-uppercase" data-bind="text: chartTitle"></span>
+                <div id="mChart"></div>
+                <p class="mChartDesc" data-bind="text: chartDesc"></p>
+              </div>
 
-                <div class="form-group">
-                  <label for="deploymentTraffic" class="container-label">STATUS</label>
-                  <p class="big-number" id="containerState">
-                    <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span><span class="pad-left-10" data-bind="text: stateInfo().state"></span>
-                  </p>
+              <div class="sideDataUpdate col-md-2">
+                <span class="dataTitle" data-bind="text: chartLabel"></span>
+                <span class="dataValue" data-bind="text: dataValue"></span>
+              </div>
+              <div class="col-md-1">
+                <div class="dropdown pull-right">
+                  <div class="dropdown-toggle" data-toggle="dropdown" id="dropdownMenu1" aria-exanded="true">
+                    <span class="fa fa-lg fa-gear text-monitor"></span>
+                  </div>
+                  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1" data-bind="foreach: chartConfig">
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: $parent.changeChart, text: chartTitle"></a></li>
+                  </ul>
                 </div>
-              </form>
-            </div>
-        </div>
-
-        <!-- traffic widget -->
-        <div class="col-md-6">
-          <div class="row" data-bind="with: monitor">
-            <div class="mainChartContainer col-md-8">
-              <span class="mChartTitle text-uppercase" data-bind="text: chartTitle"></span>
-              <div id="mChart"></div>
-              <p class="mChartDesc" data-bind="text: chartDesc"></p>
-            </div>
-
-            <div class="sideDataUpdate">
-              <span class="dataTitle" data-bind="text: chartLabel"></span>
-              <span class="dataValue" data-bind="text: dataValue"></span>
-            </div>
-            <div class="col-md-1">
-              <div class="dropdown pull-right">
-                <div class="dropdown-toggle" data-toggle="dropdown" id="dropdownMenu1" aria-exanded="true">
-                  <span class="fa fa-lg fa-gear text-monitor"></span>
-                </div>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1" data-bind="foreach: chartConfig">
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: $parent.changeChart, text: chartTitle"></a></li>
-                </ul>
               </div>
             </div>
+          </div>
+          <div class="col-md-3 container-info bg-primary">
+            <h5>Container Health</h5>
+            <form role="form">
+              <div class="form-group">
+                <p id="containerState" class="container-state">
+                  <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
+                </p>
+                  <div style="margin: 1.5em 0;"data-bind="foreach: allowedActions">
+                    <!-- ko if: enable -->
+                    <button class="btn btn-primary btn-sm" data-bind="click: method" style="border: 2px solid grey; margin-right: 10px; margin-bottom: 10px;"><span class="text-uppercase" data-bind="text: text"></span></button>
+                    <!-- /ko -->
+                  </div>
+              </div>
+            </form>
           </div>
         </div>
       </div>

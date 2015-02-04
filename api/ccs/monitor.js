@@ -108,10 +108,11 @@ ccs.Monitor = function() {
                 }
 
                 //Set latest datapoint
-                target.latestDatapoint = target.cumulativeArray[target.cumulativeArray.length-1];
+                var len = target.cumulativeArray.length - 1;
+                while (len >= 0 && target.cumulativeArray[len].metric_used == undefined) len--;
 
-                //Update the latest datapoint
-                self.dataValue(target.format(target.latestDatapoint.metric_used));
+                target.latestDatapoint = target.cumulativeArray[target.cumulativeArray.length-1];
+                self.dataValue(target.format(target.cumulativeArray[len].metric_used));
             }
         });
     }
@@ -149,8 +150,11 @@ ccs.Monitor = function() {
             });
 
             //Set latest datapoint
+            var len = target.cumulativeArray.length - 1;
+            while (len >= 0 && target.cumulativeArray[len].metric_used == undefined) len--;
+
             target.latestDatapoint = target.cumulativeArray[target.cumulativeArray.length-1];
-            self.dataValue(target.format(target.latestDatapoint.metric_used));
+            self.dataValue(target.format(target.cumulativeArray[len].metric_used));
 
             //Clear update interval if it exist
             if (self.updateInterval) clearInterval(self.updateInterval);
