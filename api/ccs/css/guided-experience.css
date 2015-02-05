@@ -1,0 +1,44 @@
+.geWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.geToggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+  display: block;
+  height: 30px;
+  width: 30px;
+  background: url('images/xIcon.png') center no-repeat;
+}
+
+.geToggle.collapsed {
+  background-image: url('images/helpIconInactive.png');
+}
+
+.geToggle.collapsed:hover {
+  background-image: url('images/helpIconActive.png');
+}
+
+.geContainer {
+  background: #19242d;
+  padding: 25px 35px 25px 20px;
+}
+
+.geContainer.compact {
+  padding: 12px 30px 14px 15px;
+  line-height: 1;
+}
+
+.geContainer a {
+  color: #24AFE5;
+  text-decoration: underline;
+}
+
+.geContainer a:hover {
+  color:#7bcfef
+}
