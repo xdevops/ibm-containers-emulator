@@ -25,10 +25,18 @@ ccs.ContainersViewModel = function() {
 
         // we get the list of groups because the dashboard UI displays both the groups and the containers without a group
         // in the "List of Containers"
-        $.getJSON(ccs.endpoint + '/v2/containers/groups', function(data) {
+        $.ajax({
+            type: 'GET',
+            url: ccs.endpoint + '/v2/containers/groups',
+            headers: {
+                "Content-Type":"application/json",
+                "X-Auth-Token": $context.auth_token
+            }
+        }).done(function(data, textStatus, xhr) {
             function makeURL(group) { return ccs.endpoint + '/v2/containers/groups/' + group.Id; }
 
-            data.forEach(function(group) {
+            var groups = JSON.parse(data);
+            groups.forEach(function(group) {
                 self.groups.push({
                     Name: group.Name,
                     Id: group.Id,

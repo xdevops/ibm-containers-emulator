@@ -34,8 +34,8 @@ ccs.NewViewModel = function() {
         image: ko.observable(),
         imageName: ko.observable(),
         images: ko.observableArray(),
-        minContainers: ko.observable(2),
-        maxContainers: ko.observable(2),
+        minContainers: ko.observable(0),
+        maxContainers: ko.observable(8),
         desiredContainers: ko.observable(2),
         availableSizes: ko.observableArray(),
         selectedSize: ko.observable(),
@@ -212,20 +212,16 @@ ccs.NewViewModel = function() {
             // POST /v2/containers/groups/create
             /*
 
+
             ```json
                    {
-                     "Name": "MyGroup3",
-                     "Memory":0,
-                     "CpuShares": 512,
-                     "Env":null,
-                     "Cmd":[
-                             "date"
-                     ],
-                     "Image":"keeper",
-                     "WorkingDir":"",
-                     "RestartPolicy": { "Name": "always", "HealthCheckType" : "HttpHealthCheck", "HealthCheckUrl":"/ping" },
-                     "NumberInstances": {"Desired":"2", "Min" : 1, "Max" : 4},
-                     "AutoScalingPolicy" : {}
+                     "Name" : "MyGroup",
+                     "Memory" : 256,
+                     "Env" : { "key1" : "value1", "key2" : "value2" },
+                     "Cmd" : "/bin/bash -c 'echo hello > /tmp/foo.txt'",
+                     "Image" : "ubuntu:latest",
+                     "Port" : 80,
+                     "NumberInstances" : { "Desired" : "2", "Min" : 1, "Max" : 4 }
                    }
             ```
             */
@@ -234,15 +230,10 @@ ccs.NewViewModel = function() {
 
             var jso = {
                 Name: self.launchData.name(),
-                Memory: 0,
-                CpuShares: 512,
-                Cmd: [],
+                Memory: self.launchData.selectedSize().memory_MB,
                 Image: self.launchData.image().Image,
-                WorkingDir: "",
-                RestartPolicy: { Name: "always", HealthCheckType : "HttpHealthCheck", HealthCheckUrl:"/ping" },
+                Port: self.launchData.httpPort(),
                 NumberInstances: {Desired: self.launchData.desiredContainers(), Min : self.launchData.minContainers(), Max : self.launchData.maxContainers()},
-                AutoScalingPolicy : {},
-                Env: null
             }
 
             $.ajax({
@@ -275,12 +266,12 @@ ccs.NewViewModel = function() {
                 Name: self.launchData.name(),
                 Memory: self.launchData.selectedSize().memory_MB,
                 Env: "",
-                Image: self.launchData.image().Image,
-                BluemixApp: ""
+                Image: self.launchData.image().Image
+                /* TODO: add bluemix add if specified */
             };
 
             var endpoint = ccs.endpoint + '/v2/containers/create';
-            if (jso.Name) endpoint += '?' + jso.Name;
+            if (jso.Name) endpoint += '?name=' + jso.Name;
             $.ajax({
                 type: 'POST',
                 url: endpoint,

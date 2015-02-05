@@ -13,7 +13,7 @@ ccs.GroupsViewModel = function() {
             c.NetworkSettings = {PublicIpAddress: '--', IpAddress: '--'};
             console.log('TODO: Created, IpAddress, PublicIpAddress, Status not part of response');
             if (!c.Created) c.Created = 0;
-            c.Ports = '--';
+            c.Port = '--';
             c.Status = '--'
         });
         self.groups(jso);

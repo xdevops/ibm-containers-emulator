@@ -9,8 +9,10 @@
             <tr>
               <th>Name</th>
               <th>Image</th>
+              <!--
               <th>Private IP Address</th>
               <th>Public IP Address</th>
+              -->
               <th>Memory</th>
               <th>Created</th>
               <th>Ports</th>
@@ -22,14 +24,14 @@
             <tr>
               <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Name"></a></td>
               <td class="field-ellipsis"><span data-bind="text: Image"></span></td>
-
+              <!--
               <td class="field-ellipsis"><span data-bind="text: NetworkSettings.IpAddress"></span></td>
               <td class="field-ellipsis"><span data-bind="text: NetworkSettings.PublicIpAddress"></span></td>
-
+              -->
               <td class="field-ellipsis"><span data-bind="text: Memory"></span></td>
 
               <td><span data-bind="text: ccs.createdText($data.Created)"></span></td>
-              <td class="field-ellipsis"><span data-bind="text: Ports"></span></td>
+              <td class="field-ellipsis"><span data-bind="text: Port"></span></td>
               <td><span class="text-success" data-bind="text: Status"></td>
               <td>
                 <a data-bind="click: $parent.deleteGroup"><span class="fa fa-lg fa-trash-o"></span></a>
