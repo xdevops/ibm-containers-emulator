@@ -15,10 +15,6 @@ ccs.NewViewModel = function() {
         self.step2(false);
     };
 
-    self.Port = function() {
-        return { portnum: undefined };
-    };
-
     self.Volume = function() {
         return {
             name: ko.observable(),
@@ -49,8 +45,8 @@ ccs.NewViewModel = function() {
         ],
         selectedDeploymentMethod: ko.observable(),
         publicIP: ko.observable('--'),
-        ports: ko.observableArray(),
-        additionalPorts: ko.observableArray(),
+        ports: ko.observable(),
+        httpPort: ko.observable(),
         volumes: ko.observableArray(),
         availableVolumes: ko.observableArray([
             'Exiting Volume 1',
@@ -80,19 +76,6 @@ ccs.NewViewModel = function() {
 
         var host = self.launchData.name();
         return host ? host + '.mybluemix.net' : '--';
-    });
-
-    self.launchData.addPort = function() {
-        self.launchData.additionalPorts.push(new self.Port());
-    };
-
-    self.launchData.portList = ko.pureComputed(function() {
-        var ports = self.launchData.ports().join(", ");
-        self.launchData.additionalPorts().forEach(function(port) {
-            if (port.portnum) ports += ', ' + port.portnum;
-        });
-
-        return ports;
     });
 
     self.launchData.deleteVolume = function(v) {
@@ -142,17 +125,20 @@ ccs.NewViewModel = function() {
         var localRepoCallback = function(data) {
             self.launchData.images.removeAll();
             data.forEach(function(image) {
-                var d = new Date(image.Created);
-                image.Created = d.getTime() / 1000;
-                image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
-                image.RepoTags.forEach(function(tag) {
-                    if (tag.indexOf('<none>') == -1) {
-                        tag = tag.split(':');
-                        image.Name = tag[0];
-                        image.Tag = tag[1] ? tag[1] : '';
-                        self.launchData.images.push(image);
+                if (image.Image.toLowerCase().indexOf('<none>') == -1) {
+                    var d = new Date(image.Created);
+                    image.Created = d.getTime() / 1000;
+                    image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
+
+                    image.Name = image.Image;
+                    image.Tag = '';
+                    var name_tag = image.Name.split(':');
+                    if (name_tag[1]) {
+                        image.Name = name_tag[0];
+                        image.Tag =  name_tag[1];
                     }
-                });
+                    self.launchData.images.push(image);
+                }
             });
 
             $("body").css("cursor", "default");
@@ -181,24 +167,43 @@ ccs.NewViewModel = function() {
             callback = remoteRepoCallback
         }
 
-        $.getJSON(docker_api_url, callback);
+        $.ajax({
+          dataType: "json",
+          url: docker_api_url,
+          headers: {"X-Auth-Token": $context.auth_token},
+          success: callback
+        });
     };
 
     self.launchData.getUsage = function() {
         var usage_api_url = ccs.endpoint + '/v2/containers/usage';
-        $.getJSON(usage_api_url, function(data) {
+
+        var callback = function(data) {
             var sizes = [];
 
+            //
+            // TODO - clean up
+            // patch the available sizes with display text for units and convert MB to GB
+            // if larger than 1k. size.memory is the display value, size.memory_MB is the value
+            // to use in a POST
+            //
             data.AvailableSizes.forEach(function(size) {
                 size.vcpus += ' CPU';
                 size.disk += ' GB';
                 if (size.memory_MB >= 1024)
-                    size.memory_MB = (size.memory_MB / 1024) + ' GB';
+                    size.memory = (size.memory_MB / 1024) + ' GB';
                 else
-                    size.memory_MB += ' MB';
+                    size.memory += ' MB';
             });
             self.launchData.availableSizes(data.AvailableSizes);
             self.launchData.selectedSize(self.launchData.availableSizes()[0]);
+        };
+
+        $.ajax({
+          dataType: "json",
+          url: usage_api_url,
+          headers: {"X-Auth-Token": $context.auth_token},
+          success: callback
         });
     };
 
@@ -232,7 +237,7 @@ ccs.NewViewModel = function() {
                 Memory: 0,
                 CpuShares: 512,
                 Cmd: [],
-                Image: self.launchData.image().Name,
+                Image: self.launchData.image().Image,
                 WorkingDir: "",
                 RestartPolicy: { Name: "always", HealthCheckType : "HttpHealthCheck", HealthCheckUrl:"/ping" },
                 NumberInstances: {Desired: self.launchData.desiredContainers(), Min : self.launchData.minContainers(), Max : self.launchData.maxContainers()},
@@ -244,7 +249,8 @@ ccs.NewViewModel = function() {
                 type: 'POST',
                 url: ccs.endpoint + '/v2/containers/groups/create',
                 headers: {
-                    "Content-Type":"application/json"
+                    "Content-Type":"application/json",
+                    "X-Auth-Token": $context.auth_token
                 },
                 data: JSON.stringify(jso)
             }).done(function(data, textStatus, xhr) {
@@ -252,38 +258,35 @@ ccs.NewViewModel = function() {
             });
         }
         else {
-            // POST /v2/containers/create
+            // POST /v2/containers/create?{name}
             /*
 
             ```json
                 {
-                     "Memory":0,
-                     "CpuShares": 512,
-                     "NumberCpus": 1,
-                     "Env":null,
-                     "Cmd":[
-                             "date"
-                     ],
-                     "Image":"base",
-                     "WorkingDir":"",
+                     "Memory": 256,
+                     "Env": "key1=value1,key2=value2",
+                     "Image":"ubuntu",
+                     "Expose": [22, 80],
+                     "BluemixApp": "bluemix-app-name"
                 }
             ```
             */
             var jso = {
                 Name: self.launchData.name(),
-                Memory: 0,
-                CpuShares: 512,
-                Cmd: [],
-                Env: [],
-                Image: self.launchData.image().Name,
-                WorkingDir: ""
+                Memory: self.launchData.selectedSize().memory_MB,
+                Env: "",
+                Image: self.launchData.image().Image,
+                BluemixApp: ""
             };
 
+            var endpoint = ccs.endpoint + '/v2/containers/create';
+            if (jso.Name) endpoint += '?' + jso.Name;
             $.ajax({
                 type: 'POST',
-                url: ccs.endpoint + '/v2/containers/create',
+                url: endpoint,
                 headers: {
-                    "Content-Type":"application/json"
+                    "Content-Type":"application/json",
+                    "X-Auth-Token": $context.auth_token
                 },
                 data: JSON.stringify(jso)
             }).done(function(data, textStatus, xhr) {
@@ -303,8 +306,8 @@ ccs.NewViewModel = function() {
         self.launchData.getContainerImages();
         self.launchData.getUsage();
         self.launchData.selectedDeploymentMethod(self.launchData.deploymentMethods[0]);
-        self.launchData.ports([80, 443]);
-        self.launchData.additionalPorts.push(new self.Port());
+        self.launchData.ports("80, 443");
+        self.launchData.httpPort('80');
 
         self.launchData.volumes.push(new self.Volume());
         self.launchData.volumes.push(new self.Volume());

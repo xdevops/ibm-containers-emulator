@@ -88,13 +88,13 @@
           </div>
 
           <div class="col-md-3" style="border-left: 1px solid grey; background-color: #eee">
-            <form role="form">
+            <form role="form" style="padding-bottom: 150px;">
               <h4>Container Settings</h4>
               <hr>
 
               <div class="form-group">
                 <label class="control-label" for="launchWizardGroup">Name your container/group:</label>
-                <input type="text" class="form-control input-sm" id="launchWizardGroup" data-bind="value: name">
+                <input type="text" class="form-control input-sm" id="launchWizardGroup" data-bind="textInput: name">
               </div>
 
               <div class="form-group">
@@ -110,34 +110,44 @@
 
               <!-- cheat. should be lanch section -->
               <div style="padding-top: 20px;"></div>
-              <h4>Scale Settings</h4>
+              <h4>Scale &amp; Network Settings</h4>
               <hr>
 
               <div class="form-group">
-                <label class="control-label" for="launchWizardDeploymentMethod">Choose deployment method:</label>
+                <label class="control-label" for="launchWizardDeploymentMethod">Deployment method:</label>
                 <select class="form-control input-sm" id="launchWizardDeploymentMethod" data-bind="options: deploymentMethods, optionsText: 'label', value: selectedDeploymentMethod, optionsCaption: 'Choose...'">
                 </select>
               </div>
 
+              <!-- ko if: isGroup -->
               <div class="form-group">
-                <label class="control-label" for="launchWizardDesired">Initial Instances:</label>
+                <label class="control-label" for="launchWizardDesired">Number of instances:</label>
                 <input type="number" class="form-control input-sm num100 input-sm" id="launchWizardDesired" data-bind="value: desiredContainers">
               </div>
 
-              <!-- cheat. should be lanch section -->
-              <div style="padding-top: 20px;"></div>
-              <h4>IP And Route Settings</h4>
-              <hr>
-
               <div class="form-group">
-                <label class="control-label" for="launchWizardAssignPublicIP">Assign a Public IP Address:</label>
-                <input type="text" class="form-control input-sm" id="launchWizardAssignPublicIP" data-bind="value: publicIP, disable: isGroup">
+                <label class="control-label" for="launchWizardAssignRoutes">Route assignment:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardAssignRoutes" data-bind="value: route">
               </div>
 
               <div class="form-group">
-                <label class="control-label" for="launchWizardAssignRoutes">Assign Routes:</label>
-                <input type="text" class="form-control input-sm" id="launchWizardAssignRoutes" data-bind="value: route, enable: isGroup">
+                <label class="control-label" for="launchWizardHTTPPort">HTTP port:</label>
+                <input type="number" class="form-control input-sm num100" id="launchWizardHTTPPort" data-bind="value: httpPort">
               </div>
+
+              <!-- /ko -->
+
+              <!-- ko ifnot: isGroup -->
+              <div class="form-group">
+                <label class="control-label" for="launchWizardAssignPublicIP">Public IP Address:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardAssignPublicIP" data-bind="value: publicIP">
+              </div>
+
+              <div class="form-group">
+                <label class="control-label" for="launchWizardExposedPorts">Exposed Ports:</label>
+                <input type="text" class="form-control input-sm" id="launchWizardExposedPorts" data-bind="value: ports">
+              </div>
+              <!-- /ko -->
 
               <div class="form-group">
                 <button type="select" class="btn btn-primary" data-bind="click: $parent.next">Next</button>
@@ -192,7 +202,7 @@
               </tr>
               <tr>
                 <td>Ports:</td>
-                <td data-bind="text: portList"></td>
+                <td data-bind="text: ports"></td>
               </tr>
               <tr>
                 <td>Volumes:</td>
@@ -211,20 +221,7 @@
           <button class="btn btn-info" style="margin-left: 10px;">TERMS</button>
         </div>
         <div class="col-md-8" style="border-left: 1px solid grey; background-color: #eee">
-          <form role="form">
-            <h4>Container Port Settings</h4>
-            <hr>
-
-            <div class="form-group">
-              <label class="control-label" for="launchWizardAdditionalPorts">Additional ports to expose:</label>
-              <div class="input-group" id="launchWizardAdditionalPorts">
-                <!-- ko foreach: additionalPorts -->
-                <input type="text" class="form-control port input-sm" data-bind="value: portnum, uniqueName: true">
-                <!-- /ko -->
-                <a class="pad-left-10" data-bind="click: addPort">+ Add Port</a>
-              </div>
-            </div>
-
+          <form role="form" style="padding-bottom: 50px;">
             <!-- cheat. should be lanch section -->
             <div style="padding-top: 20px;"></div>
             <h4>Storage Volumes</h4>
@@ -256,24 +253,25 @@
                 </tr>
               </tbody>
             </table>
-            <a class="pull-right" data-bind="click: showVolumesDialog">Manage Volumes</a>
 
             <!-- cheat. should be lanch section -->
             <div style="padding-top: 20px;"></div>
             <h4>Service Binding</h4>
             <hr>
-            <p>Bluemix Services can be bound to your containers upon launch only if they are already bound to a CloudFoundry App in your Organizational Dashboard.</p>
+            <p>Bind Bluemix services to your containers from the Cloud Foundry apps in your Bluemix space:</p>
 
             <div class="row">
               <div class="form-group col-md-6">
-                <label class="control-label" for="launchWizardCFApp">Existing Cloud Foundry Apps:</label>
-                <select class="form-control input-sm" id="launchWizardCFApp" data-bind="options: $parent.availabeCFApps, optionsCaption: 'Leave unassigned' "></select>
+                <label class="control-label" for="launchWizardCFApp">Services:</label>
+                <select class="form-control input-sm" id="launchWizardCFApp" data-bind="options: $parent.availabeCFApps, optionsCaption: 'Select Cloud Foundry App' "></select>
               </div>
             </div>
 
-            <div style="display: block;">
-              <button class="btn btn-default" data-bind="click: $parent.back">Back</button>
-              <button class="btn btn-info" data-bind="click: launch">Launch</button>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <button type="select" class="btn btn-default" data-bind="click: $parent.back">Back</button>
+                <button type="select" class="btn btn-info" data-bind="click: launch">Launch</button>
+              </div>
             </div>
           </form>
         </div>

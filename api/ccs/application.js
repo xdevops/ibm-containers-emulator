@@ -6,7 +6,8 @@ var onload_function = function() {
 
     window.$context = {
         resource_type: elem.getAttribute('resource-type'),
-        jso: jso
+        jso: jso,
+        auth_token: elem.getAttribute('auth-token')
     };
 
     // step 1: dynamically load spa template
