@@ -39,23 +39,20 @@ ccs.ContainerViewModel = function() {
     */
     self.stateInfo = ko.pureComputed(function() {
         var value = {state: 'UNKNOWN', icon: 'fa fa-lg fa-question-circle', style: 'black'};
-        var s = self.jso.State;
+        var s = self.jso.ContainerState;
 
-        if (s.Paused)
-            value = {state: 'Paused', icon: 'fa fa-lf fa-pause', style: 'color: yellow'};
-        else if (!s.Restarting) {
-            if (s.Running)
-                value = {state: 'Running', icon: 'fa fa-lf fa-check-circle', style: 'color: green'};
-            else if (s.OOMKilled)
-                value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
-            else {
-                if (s.ExitCode)
-                    value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
-                else
-                    value = {state: 'Shutdown', icon: 'fa fa-lf fa-stop', style: 'color: black'};
-            }
-        } else
-            value = {state: 'Restarting', icon: 'fa fa-lf fa-spinner fa-spin', style: 'color: lightgreen'};
+        if (s == 'Paused')
+            value = {state: 'Paused', icon: 'fa fa-lg fa-pause', style: 'color: yellow'};
+        else if (s == 'Running')
+            value = {state: 'Running', icon: 'fa fa-lg fa-check-circle', style: 'color: green'};
+        else if (s == 'Crashed')
+            value = {state: 'Crashed', icon: 'fa fa-lg fa-bomb', style: 'color: red'};
+        else if (s == 'Shutdown')
+            value = {state: 'Shutdown', icon: 'fa fa-lg fa-stop', style: 'color: black'};
+        else if (s == 'Suspended')
+            value = {state: 'Suspended', icon: 'fa fa-lg fa-spinner fa-circle-o', style: 'color: grey'};
+        else
+            value = {state: 'NOSTATE', icon: 'fa fa-lg fa-circle-o', style: 'color: grey'};
 
         return value;
     });
@@ -182,7 +179,7 @@ ccs.ContainerViewModel = function() {
         self.cpu(cpu_percent);
         self.memory(jso.Config.Memory);
         self.image(jso.Config.Image);
-        self.privateIP(jso.NetworkSettings.IPAddress);
+        self.privateIP(jso.NetworkSettings.IpAddress);
         self.publicIP('--');
         self.created(jso.Created);
 

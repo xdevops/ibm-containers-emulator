@@ -146,6 +146,8 @@ def fixup_containers_response(containers_json):
 def fixup_container_info_response(container_json):
     # The following properties are ccsapi extensions
     container_json["ContainerState"] = get_container_state(container_json)
+    container_json["NetworkSettings"]["IpAddress"] = container_json["NetworkSettings"]["IPAddress"]
+
     add_group(container_json)
 
     return 200, container_json
@@ -214,7 +216,7 @@ def get_running_containers(v):
                 containers, status_code = filter_for_group(group_name_or_id, containers)
             if status_code != 200:
                 response_json_string = containers
-            else:    
+            else:
                 response_json_string = json.dumps(containers)
     return get_response_text(status_code, response_json_string, 'containers')
 

@@ -56,14 +56,14 @@
                   <label for="containerTotalMemory" class="container-label text-uppercase">total memory</label>
                   <p class="big-number" id="containerTotalMemory">
                     <span data-bind="text: memory"></span>
-                    <span>GB</span>
+                    <span>MB</span>
                   </p>
                 </div>
 
                 <div class="form-group">
                   <label for="deploymentTraffic" class="container-label text-uppercase">total disk</label>
                   <p class="big-number" id="containerState">
-                    <span data-bind="">512 MB</span>
+                    <span data-bind="">-- MB</span>
                   </p>
                 </div>
             </form>
@@ -116,8 +116,8 @@
               <tr>
                 <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Name"></a></td>
                 <td class="field-ellipsis"><span data-bind="text: Id"></span></td>
-                <td class="field-ellipsis"><span data-bind="text: Ip"></span></td>
-                <td><span class="text-success" data-bind="text: Status"></td>
+                <td class="field-ellipsis"><span data-bind="text: NetworkSettings.IpAddress"></span></td>
+                <td><span class="text-success" data-bind="text: ContainerState"></td>
               </tr>
             </tbody>
           </table>

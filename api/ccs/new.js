@@ -238,7 +238,7 @@ ccs.NewViewModel = function() {
 
             $.ajax({
                 type: 'POST',
-                url: ccs.endpoint + '/v2/containers/groups/create',
+                url: ccs.endpoint + '/v2/containers/groups',
                 headers: {
                     "Content-Type":"application/json",
                     "X-Auth-Token": $context.auth_token

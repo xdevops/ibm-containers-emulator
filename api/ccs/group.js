@@ -10,10 +10,10 @@ ccs.GroupViewModel = function() {
     self.cpu = ko.observable();
     self.memory = ko.observable();
     self.image = ko.observable();
-    self.publicIP = ko.observable();
-    self.privateIP = ko.observable();
-
+    self.port = ko.observable();
     self.status = ko.observable();
+    self.route = ko.observable();
+    self.volumes = ko.observableArray();
     self.containers = ko.observableArray();
 
     // POST /{version}/containers/{id}/start
@@ -120,23 +120,27 @@ ccs.GroupViewModel = function() {
         console.log('TODO - HACK for groups detail - check with real API');
 
         self.jso = jso;
-        self.name(jso.Config.Name.replace('/',''));
+        self.name(jso.Name.replace('/',''));
 
-        var cpu_shares = jso.Config.CpuShares;
-        if (cpu_shares == 0) cpu_shares = self.DOCKER_MAXSHARES;
-        var cpu_percent = (100 * cpu_shares / self.DOCKER_MAXSHARES).toPrecision(3);
-
+        var cpu_percent = 100; //TODO - fix this
         self.cpu(cpu_percent);
-        self.memory(jso.Config.Memory);
-        self.image(jso.Config.Image);
-        self.privateIP('--');
-        self.publicIP('--');
+        self.memory(jso.Memory);
+        self.image(jso.Image);
 
-        self.status('ACTIVE');
-        jso.containers.forEach(function(c) {
-            c.url = '/v2/containers/' + c.Id + '/json';
+        self.status('ACTIVE'); // TODO - this has to be computed
+        self.port = jso.Port;
+        self.route('--'); // TODO this has to be retrieved
+        self.volumes([]); // TODO this has to be retrieved
+
+        // have to make another API call to get containers
+        // /v2/containers/json?group={id}
+        var url = ccs.endpoint + '/v2/containers/json?group=' + jso.Id;
+        $.getJSON(url, function(containers) {
+            containers.forEach(function(c) {
+                c.url = '/v2/containers/' + c.Id + '/json';
+            });
+            self.containers(containers);
         });
-        self.containers(jso.containers);
 
         self.monitor.init(self.jso.Id);
     };
