@@ -15,6 +15,7 @@ ccs.GroupViewModel = function() {
     self.route = ko.observable();
     self.volumes = ko.observableArray();
     self.containers = ko.observableArray();
+    self.numContainers = ko.observable();
 
     // POST /{version}/containers/{id}/start
     self.doStart = function() {
@@ -75,10 +76,6 @@ ccs.GroupViewModel = function() {
         });
     };
 
-    self.numContainers = ko.pureComputed(function() {
-        return self.containers().length;
-    });
-
     self.stateInfo = ko.pureComputed(function() {
         var value = {state: 'UNKNOWN', icon: 'fa fa-lg fa-question-circle', style: 'black'};
 
@@ -116,6 +113,28 @@ ccs.GroupViewModel = function() {
 
     self.monitor = new ccs.Monitor();
 
+    self.updateInstances = function() {
+        var jso = {
+            NumberInstances: {
+                Desired: Math.floor(self.numContainers()),
+                Min: 0,
+                Max: 8
+            }
+        };
+
+        $.ajax({
+            type: 'PATCH',
+            url: ccs.endpoint + '/v2/containers/groups/' + self.jso.Id,
+            headers: {
+                "Content-Type":"application/json",
+                "X-Auth-Token": $context.auth_token
+            },
+            data: JSON.stringify(jso)
+        }).done(function(data, textStatus, xhr) {
+            console.log('INFO: PATCH of group instances successful');
+        });
+    };
+
     self.init = function(jso) {
         console.log('TODO - HACK for groups detail - check with real API');
 
@@ -140,6 +159,7 @@ ccs.GroupViewModel = function() {
                 c.url = '/v2/containers/' + c.Id + '/json';
             });
             self.containers(containers);
+            self.numContainers(self.containers().length);
         });
 
         self.monitor.init(self.jso.Id);
