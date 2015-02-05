@@ -19,6 +19,18 @@ class FileGroupStore():
         if os.path.exists(self.store_dir):
             shutil.rmtree(self.store_dir)
         
+    def get_group(self, group_name_or_id):
+        file_path = self.group_id_to_file(group_name_or_id)
+        try:
+            with open(file_path, 'r') as group_file:
+                group = json.load(group_file)
+                return group 
+        except IOError:
+            for group in self.list_groups():
+                if group['Name'] == group_name_or_id:
+                    return group
+            return None # Group not found
+    
     def put_group(self, group):
         if 'Id' in group:
             group_id = group['Id']
@@ -33,19 +45,9 @@ class FileGroupStore():
             json.dump(group, group_file)
         return group_id
         
-    def get_group(self, group_id):
-        file_path = self.group_id_to_file(group_id)
-        try:
-            with open(file_path, 'r') as group_file:
-                group = json.load(group_file)
-                return group 
-        except IOError:
-            return None # Group not found
-    
-    def delete_group(self, group_id):
-        file_path = self.group_id_to_file(group_id)
-        if file_path is not None:
-            os.unlink(file_path)
+    def delete_group(self, group):
+        file_path = self.group_id_to_file(group['Id'])
+        os.unlink(file_path)
             
     def list_groups(self):
         group_list = []

@@ -207,17 +207,13 @@ new:
 old:
         GET    /{version}/containers/groups/{name}
         PATCH  /{version}/containers/groups/{name}
-        GET    /{version}/containers/groups/{name}/containers
         DELETE /{version}/containers/groups/{id}
-        GET    /{version}/containers/groups/{id}/floating-ips
         POST   /{version}/containers/groups/maproute{?name}
         POST   /{version}/containers/groups/unmaproute{?name}
 new:
         GET    /{version}/containers/groups/{name_or_id}
         PATCH  /{version}/containers/groups/{name_or_id}
-        GET    /{version}/containers/groups/{name_or_id}/containers
         DELETE /{version}/containers/groups/{name_or_id}
-        GET    /{version}/containers/groups/{name_or_id}/floating-ips
         POST   /{version}/containers/groups/{name_or_id}/maproute
         POST   /{version}/containers/groups/{name_or_id}/unmaproute
 ```
@@ -234,6 +230,7 @@ new:
 
 8. Tenants
 ----------
+NOTE: THIS ITEM HAS BEEN DEFERRED
 
 ```
 old:
@@ -289,18 +286,15 @@ new:
 --------
 
 ```
-NOTE: Maybe these should be deffered until after February?
+NOTE: THIS ITEM HAS BEEN DEFERRED
 
-a) Is this API needed? Can it be removed?
-        GET /{version}/containers/groups/{name_or_id}/floating-ips
-        
-b) Instead of:
+a) Instead of:
         POST /{version}/containers/groups/{name_or_id}/maproute
         POST /{version}/containers/groups/{name_or_id}/unmaproute
    Should we instead do it more RESTfully:
         POST /{version}/containers/groups/{name_or_id} -d "{ map or unmap request }"
         
-c) Remove {version} from all URLs
+b) Remove {version} from all URLs
    old:
         GET/POST/PATCH/DELETE /{version}/containers/...
    new:

@@ -11,63 +11,23 @@ We use [API Blueprint](http://apiblueprint.org/) for formatting and describing t
 
 """
 import os, requests, json
-from flask import Flask, request, Response
+from flask import Flask, request
 #from flask.ext.cors import CORS
 from string import Template
 from groupstore import FileGroupStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
 import logging
 import sys
-import datetime
+
 
 """
-CCS API                                                     Docker API
--------------------------------------------------------     ------------------------------------------------------------------------------------
-GET    /{version}/containers/json{?all,limit,size}          /containers/json{?all,limit,size}
-POST   /{version}/containers/create{?name}                  /containers/create{?name} (also POST /containers/(id)/start)
-POST   /{version}/containers/{id}/start                     /containers/(id)/start
-GET    /{version}/containers/{id}/json                      /containers/(id)/json
-GET    /{version}/containers/{id}/logs{?stdout,stderr}      /containers/(id)/logs{?stdout,stderr}
-POST   /{version}/containers/{id}/stop{?t}                  /containers/(id)/stop{?t}
-POST   /{version}/containers/{id}/restart{?t}               /containers/(id)/restart{?t}
-POST   /{version}/containers/{id}/pause                     /containers/(id)/pause
-POST   /{version}/containers/{id}/unpause                   /containers/(id)/unpause
-DELETE /{version}/containers/{id}                           /containers/(id) (The container is first killed by default ???)
-
-POST   /{version}/containers/images/register                ???
-GET    /{version}/containers/images/json                    /images/json
-PUT    /{version}/containers/images/<id>                    ???
-DELETE /{version}/containers/images/<id>                    /images/(name) (note id vs name ???)
-
-The following have no corresponding Docker implementation
-
-POST   /{version}/containers/tokens
-GET    /{version}/containers/usage
-
-GET    /{version}/containers/floating-ips{?all}
-POST   /{version}/containers/{id}/floating-ips/{ip}/bind
-POST   /{version}/containers/{id}/floating-ips/{ip}/unbind
-POST   /{version}/containers/floating-ips/request
-POST   /{version}/containers/floating-ips/{ip}/release
-
-GET    /{version}/containers/groups
-POST   /{version}/containers/groups/create
-PUT    /{version}/containers/groups/{id}
-DELETE /{version}/containers/groups/{id}
-GET    /{version}/containers/groups/{id}/health
-
 Problems and Incompatibilities
 
-1. Missing Names field
-2. Status field value from Docker is being overwritten
-3. When should get_container_status return "Suspended"
-4. get_container_status Exited (0) currently returning NOSTATE ... should this be Shutdown?
-5. extensions - see fixup_containers_response
-6. note incompatible IPAddress -> IpAddress
-7. note Name field has no leading '/' character as in docker
-8. group["NumberInstances"]["Desired"] is String ("3"), should be int (3)
+1. When should get_container_state return "Suspended"
+2. note incompatible IPAddress -> IpAddress
+3. note Name field has no leading '/' character as in docker
 
-Extensions to current CCSAPI
+Extensions to current CCSAPI: Talk to Dave ???
 
 GET   /{version}/containers/new (launch wizard screen for containers and groups)
 """
@@ -100,13 +60,13 @@ HTML_TEMPLATE=\
 </html>
 '''
 
-def get_response_text(status_code, response_json, resource_type):
+def get_response_text(status_code, response_json_string, resource_type):
     resource_url = request.url
     best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
     if best == 'application/json' or status_code != 200:
-        return response_json, status_code
+        return response_json_string, status_code
     else:
-        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type, resource_url=resource_url), status_code
+        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json_string, resource_type=resource_type, resource_url=resource_url), status_code
 
 def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
@@ -124,83 +84,42 @@ NUM_HOST_PORTS = 9
 AVAILABLE_HOST_PORTS = [ True, True, True, True, True, True, True, True, True ]
 FIRST_HOST_PORT = 6001
 
-"""
-killed docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": -1,
-    "FinishedAt": "2015-01-18T20:30:37.512283287Z",
-    "OOMKilled": false,
-    "Paused": false,
-    "Pid": 0,
-    "Restarting": false,
-    "Running": false,
-    "StartedAt": "2015-01-18T20:29:07.117411842Z"
-  },
-
-running docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": 0,
-    "FinishedAt": "0001-01-01T00:00:00Z",
-    "OOMKilled": false,
-    "Paused": false,
-    "Pid": 5197,
-    "Restarting": false,
-    "Running": true,
-    "StartedAt": "2015-01-18T20:29:07.402833784Z"
-  },
-
-paused docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": 0,
-    "FinishedAt": "0001-01-01T00:00:00Z",
-    "OOMKilled": false,
-    "Paused": true,
-    "Pid": 6284,
-    "Restarting": false,
-    "Running": true,
-    "StartedAt": "2015-01-18T20:30:07.220679896Z"
-  },
-
-stopped/exited docker container:
-
-  "State": {
-    "Error": "",
-    "ExitCode": 0,
-    "FinishedAt": "2015-01-19T18:09:53.691721551Z",
-    "OOMKilled": false,
-    "Paused": false,
-    "Pid": 0,
-    "Restarting": false,
-    "Running": false,
-    "StartedAt": "2015-01-19T18:09:53.67503787Z"
-  },
-"""
-def get_container_status(container_json):
+def get_container_state(container_json):
     # Return one of: 'Running' | 'NOSTATE' | 'Shutdown' | 'Crashed' | 'Paused' | 'Suspended'
-    # Note: 'Paused' and "Running' are clear but,
-    #  how do "docker create", "docker kill", "docker stop" and "exited container" map to 'Shutdown', 'Crashed', 'Suspended', 'NOSTATE' ?
-    #  Answers from Paulo:
-    #    1. 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
-    #    2. 'Shutdown' for stopped container (/v/container/id/stop)
-    #    3. 'Crashed' for container that has exited
-    if container_json["State"]["Paused"]:
+    #    Note: 'Suspended' is a Nova state that will never happen (should probably remove from ccs api)
+    if container_json["State"].get("Paused"):
         return "Paused"
-    if not container_json["State"]["Restarting"]:
-        if container_json["State"]["Running"]:
+    if not container_json["State"].get("Restarting"):
+        if container_json["State"].get("Running"):
             return "Running"
-        if container_json["State"]["OOMKilled"]: # Out Of Memory"
+        if container_json["State"].get("OOMKilled"): # Out Of Memory"
             return "Crashed"
-        if container_json["State"]["ExitCode"]:
+        if container_json["State"].get("ExitCode") and container_json["State"].get("Error"):
             return "Crashed"
         else:
             return "Shutdown"
     return "NOSTATE"
+
+def filter_for_group(name_or_id, containers):
+    group = GROUP_STORE.get_group(name_or_id)
+    if not group:
+        app.logger.warning("get_group_containers failed, no group with name or id {0}".format(name_or_id))
+        return "No such group name or id {0}".format(name_or_id), 404
+    group_prefix = group["Name"] + '_'
+    group_containers = []
+    for container in containers:
+        if container["Name"].startswith(group_prefix):
+            group_containers.append(container)
+    return group_containers, 200
+
+def add_group(container_json):
+    groups = GROUP_STORE.list_groups()
+    for g in groups:
+        group_prefix = g["Name"] + '_'
+        n = container_json["Name"][1:] if container_json["Name"].startswith("/") else container_json["Name"]
+        if n.startswith(group_prefix):
+            container_json["Group"] = { "Name": g["Name"], "Id": g["Id"] }
+            return
 
 def fixup_containers_response(containers_json):
     for container in containers_json:
@@ -210,18 +129,26 @@ def fixup_containers_response(containers_json):
             return r.status_code, r.text
         container_json = r.json()
 
-        # The following properties are missing or incompatible
+        # The following properties are ccsapi extensions
         container["ImageId"] = container_json["Image"]
         container["Name"] = container_json["Name"][1:] if container_json["Name"].startswith("/") else container_json["Name"]
         container["NetworkSettings"] = {}
         container["NetworkSettings"]["IpAddress"] = container_json["NetworkSettings"]["IPAddress"]
         container["NetworkSettings"]["PublicIpAddress"] = ""
-        container["Status"] = get_container_status(container_json)
+        container["ContainerState"] = get_container_state(container_json)
+        add_group(container)
         # Skipping the following because I don't know what they are or where to find their values:
         # container["SizeRootFs"]
         # container["SizeRw"]
 
     return 200, containers_json
+
+def fixup_container_info_response(container_json):
+    # The following properties are ccsapi extensions
+    container_json["ContainerState"] = get_container_state(container_json)
+    add_group(container_json)
+
+    return 200, container_json
 
 def fixup_images_response(images_json):
     app.logger.debug("REACHED fixup_images_response, images_json={0}".format(images_json))
@@ -229,12 +156,9 @@ def fixup_images_response(images_json):
     for image in images_json:
         app.logger.warn("in fixup_images_response converting {0}".format(image))
 
-        # The following properties are missing or incompatible
+        # The following properties are ccsapi extensions
         if 'Image' not in image:
             image['Image'] = image['RepoTags'][0]
-
-        # Docker gives 'Created' as an Int, but in CCSAPI it is a String
-        image['Created'] = datetime.datetime.fromtimestamp(image['Created']).isoformat()
 
     return 200, images_json
 
@@ -254,192 +178,51 @@ def get_launch_wizard(v):
     return get_response_text(200, json.dumps(response_json), 'new')
 
 """
-# Group Authentication
-
-"""
-
-"""
 ## POST /{version}/containers/tokens
-
-Request an authorization token for all the container cloud service API requests.
-
-+ Request with username and password (application/json)
-  + Headers
-       Accept:  application/json
-
-```json
-       {
-        "auth":
-              {"tenantName": "admin",
-               "passwordCredentials":
-                                    {
-                                     "username": "admin",
-                                     "password": "devstack"
-                                     }
-               }
-        }
-```
-
-+ Request with API key (application/json)
-  + Headers
-       Accept:  application/json
-
-```json
-        {
-        "auth":
-              {
-               "key": "api_key"
-              }
-        }
-```
-
-+ Response (application/json)
-
-```json
-   {
-    "access": {
-        "token": {
-            "issued_at": "2013-11-06T20:06:24.113908",
-            "expires": "2013-11-07T20:06:24Z",
-            "id": "<TOKEN>",
-            "tenant": {
-                "description": null,
-                "enabled": true,
-                "id": "604bbe45ac7143a79e14f3158df67091",
-                "name": "admin"
-            }
-        }
-    }
-```
-+ Response 400 (text/plain)
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/tokens', methods=['POST'])
 def get_token(v):
     return "TODO", 200
 
-"""
-# Group Containers Management
-
-"""
+#"""
+### GET /{version}/containers/gettoken{?tenant=$OS_TENANT_NAME&user=$OS_USERNAME&password=$OS_PASSWORD}
+#"""
+# TODO old format, remove!
+# this is just to preserve the old scripts.
+# This needs to be removed
+#@app.route('/<v>/containers/gettoken', methods=['GET'])
+#def get_old_token(v):
+#    return ...
 
 """
 ## GET /{version}/containers/json{?all,limit,size}
-
-Returns a list of (running) containers.
-
-+ Parameters
-    + all (optional, boolean, `1/True/true or 0/False/false`) ... Show all containers - only running containers are shown by default.
-    + limit (optional, int, `10`) ... Show limit last created containers, include non-running ones.
-    + size (optional, boolean, `1/True/true or 0/False/false`) ... Show the containers sizes
-
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 200 (application/json)
-
-```json
-   [
-         {
-                 "Id": "8dfafdbc3a44",
-                 "Name": "cont1",
-                 "Image": "base:latest",
-                 "Command": "echo 1",
-                 "Created": 1367854155,
-                 "Status": "Exit 0",
-                 "Ports":[{"PrivatePort": 2222, "PublicPort": 3333, "Type": "tcp"}],
-                 "NetworkSettings": {
-                         "IpAddress": "192.123.12.13",
-                         "PublicIpAddress": "93.12.1.14"
-                 },
-                 "SizeRw":0,
-                 "SizeRootFs":0
-         },
-         {
-                 "Id": "8dfafdbc3a45",
-                 "Name":"cont2",
-                 "Image": "ubuntu:latest",
-                 "Command": "/bin/bash",
-                 "Created": 1367884155,
-                 "Status": "Exit 0",
-                 "NetworkSettings": {
-                         "IpAddress": "192.123.12.15",
-                         "PublicIpAddress": "93.12.1.17"
-                 },
-                 "Ports":[{"PrivatePort": 2224, "PublicPort": 3333, "Type": "tcp"}],
-                 "SizeRw":12288,
-                 "SizeRootFs":0
-         }
-    ]
-```
-+ Response 400 (text/plain)
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/json', methods=['GET'])
+#@token_required
 def get_running_containers(v):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    containers = r.json()
-    groups = GROUP_STORE.list_groups()
-    for c in containers:
-        for g in groups:
-            group_prefix = '/' + g["Name"] + '_'
-            for n in c["Names"]:
-                if n.startswith(group_prefix):
-                    c["Group"] = { "Name": g["Name"], "Id": g["Id"] }
-
-    status_code, response_json = fixup_containers_response(containers) if r.status_code == 200 else (r.status_code, r.text)
-    return get_response_text(status_code, json.dumps(response_json), 'containers')
+    if r.status_code != 200:
+        status_code = r.status_code
+        response_json_string = r.text
+    else:
+        status_code, containers = fixup_containers_response(r.json())
+        if status_code != 200:
+            response_json_string = containers
+        else:
+            group_name_or_id = request.args.get('group')
+            if group_name_or_id:
+                containers, status_code = filter_for_group(group_name_or_id, containers)
+            if status_code != 200:
+                response_json_string = containers
+            else:    
+                response_json_string = json.dumps(containers)
+    return get_response_text(status_code, response_json_string, 'containers')
 
 """
 ## POST /{version}/containers/create{?name}
-
-Creates and start a container. In the Docker API there are two separate APIs to create and start a container. With Nova we can only create and start a container in one step, therefore this API merges parameters from the Docker create and start container.
-
-+ Parameters
-    + name (optional, string, `mydocker1`) ... name of the container.
-
-+ Request (application/json)
-  + Headers
-     Accept:  application/json
-     X-Auth-Token: <TOKEN>
-
-```json
-    {
-         "Memory":0,
-         "CpuShares": 512,
-         "NumberCpus": 1,
-         "Env":null,
-         "Cmd":[
-                 "date"
-         ],
-         "Image":"base",
-         "WorkingDir":"",
-    }
-```
-+ Response 201 (application/json)
-
-```json
-      {
-            "Id": "8dfafdbc3a43",
-            "Warnings":[]
-      }
-```
-
-+ Response 400 (test/plain)
-     bad parameter
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
-
 """
-
 @app.route('/<v>/containers/create', methods=['POST'])
+#@token_required
 def create_and_start_container(v):
     app.logger.debug("in create_and_start_container, request.data={0}".format(request.data))
 
@@ -453,10 +236,6 @@ def create_and_start_container(v):
     # of always injecting a host if not specified...
     if create_and_start_data['Image'].startswith('registry-ice.ng.bluemix.net/'):
         create_and_start_data['Image'] = create_and_start_data['Image'][28:]    # 28 is how long the prefix we are stripping is
-
-    #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
-    if "Env" in create_and_start_data and create_and_start_data["Env"]:
-        create_and_start_data["Env"] = create_and_start_data["Env"].split(',')
 
     r = requests.post(get_docker_url(), headers=request.headers, data=json.dumps(create_and_start_data))
     if r.status_code != 201:
@@ -496,139 +275,66 @@ def create_and_start_container(v):
     return json.dumps(response), 201
 
 """
-## POST /{version}/containers/{id}/start
-
-Starts a container.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 204 (plain/text)
-   no error
-+ Response 304 (plain/text)
-   container already started
-+ Response 401 (text/plain)
-+ Response 404 (plain/text)
-   no such container
-+ Response 500 (plain/text)
-   server error
+## GET /{version}/containers/{id}/json
+"""
+@app.route('/<v>/containers/<id>/json', methods=['GET'])
+#@token_required
+def show_container_info(v,id):
+    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
+    container = r.json()
+    status_code, response_json = fixup_container_info_response(container) if r.status_code == 200 else (r.status_code, r.text)
+    return get_response_text(status_code, json.dumps(response_json), 'container')
 
 """
+## POST /{version}/containers/{id}/start
+"""
 @app.route('/<v>/containers/<id>/start', methods=['POST'])
+#@token_required
 def start_container(v,id):
     r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
     return r.text, r.status_code
 
 """
-## GET /{version}/containers/{id}/json
-
-Return low-level information on the container {id}
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 200 (application/json)
-
-```json
-        {
-                 "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
-                 "Created": "2013-05-07T14:51:42.041847+02:00",
-                 "Path": "date",
-                 "Args": [],
-                 "Config": {
-                         "Hostname": "4fa6e0f0c678",
-                         "User": "",
-                         "Memory": 0,
-                         "MemorySwap": 0,
-                         "AttachStdin": false,
-                         "AttachStdout": true,
-                         "AttachStderr": true,
-                         "PortSpecs": null,
-                         "Tty": false,
-                         "OpenStdin": false,
-                         "StdinOnce": false,
-                         "Env": null,
-                         "Cmd": [
-                                 "date"
-                         ],
-                         "Dns": null,
-                         "Image": "base",
-                         "Volumes": {},
-                         "VolumesFrom": "",
-                         "WorkingDir":""
-                         },
-                 "State": {
-                         "Running": false,
-                         "Pid": 0,
-                         "ExitCode": 0,
-                         "StartedAt": "2013-05-07T14:51:42.087658+02:01360",
-                         "Ghost": false
-                 },
-                 "Image": "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
-                 "NetworkSettings": {
-                         "IpAddress": "",
-                         "PublicIpAddress": "93.12.1.17",
-                         "IpPrefixLen": 0,
-                         "Gateway": "",
-                         "Bridge": "",
-                         "PortMapping": null
-                 },
-                 "SysInitPath": "/home/kitty/go/src/github.com/docker/docker/bin/docker",
-                 "ResolvConfPath": "/etc/resolv.conf",
-                 "Volumes": {},
-                 "HostConfig": {
-                     "Binds": null,
-                     "ContainerIDFile": "",
-                     "LxcConf": [],
-                     "Privileged": false,
-                     "PortBindings": { },
-                     "Links": ["/name:alias"],
-                     "PublishAllPorts": true
-                 }
-    }
-```
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
+## POST /{version}/containers/{id}/stop{?t}
+"""
+@app.route('/<v>/containers/<id>/stop', methods=['POST'])
+#@token_required
+def stop_container(v,id):
+    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    return r.text, r.status_code
 
 """
-@app.route('/<v>/containers/<id>/json', methods=['GET'])
-def show_container_info(v,id):
-    r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    return get_response_text(r.status_code, r.text, 'container')
+## POST /{version}/containers/{id}/restart{?t}
+"""
+@app.route('/<v>/containers/<id>/restart', methods=['POST'])
+#@token_required
+def restart_container(v,id):
+    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    return r.text, r.status_code
 
 """
-## GET /{version}/containers/{id}/logs{?stdout,stderr}
-Get stdout and stderr logs from the container id
-TODO - check if could return a stream or just plain text (deviating from current docker log API)
+## POST /{version}/containers/{id}/pause
+"""
+@app.route('/<v>/containers/<id>/pause', methods=['POST'])
+#@token_required
+def pause_container(v,id):
+    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    return r.text, r.status_code
 
+"""
+## POST /{version}/containers/{id}/unpause
+"""
+@app.route('/<v>/containers/<id>/unpause', methods=['POST'])
+#@token_required
+def unpause_container(v,id):
+    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
+    return r.text, r.status_code
 
-+ Parameters
-    + stdout (optional, boolean, `1/True/true or 0/False/false`) ... show stdout log. Default true.
-    + stderr (optional, boolean, `1/True/true or 0/False/false`) ... show stderr log. Default false.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 200 (application/vnd.docker.raw-stream)
-
-   ```
-     {{ STREAM }}
-   ```
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
+"""
+## GET /{version}/containers/{id}/logs{?stdout}
 """
 @app.route('/<v>/containers/<id>/logs', methods=['GET'])
+#@token_required
 def get_logs(v,id):
     # TODO look at ice's request to see if the streams were specified there (how?)
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'},
@@ -640,176 +346,17 @@ def get_logs(v,id):
     return get_response_text(r.status_code, r.text, 'logs')
 
 """
-## POST /{version}/containers/{id}/stop{?t}
-
-Stops the container {id}
-
-+ Parameters
-    + t (optional, int, 10) ... number of seconds to wait before killing the container
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 204 (text/plain)
-+ Response 304 (text/plain)
-    container already stopped
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
-"""
-@app.route('/<v>/containers/<id>/stop', methods=['POST'])
-def stop_container(v,id):
-    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
-    return r.text, r.status_code
-
-"""
-## POST /{version}/containers/{id}/restart{?t}
-
-Restarts the container {id}
-
-+ Parameters
-    + t (optional, int, 10) ... number of seconds to wait before killing the container
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 204 (text/plain)
-+ Response 304 (text/plain)
-    container already stopped
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
-"""
-@app.route('/<v>/containers/<id>/restart', methods=['POST'])
-def restart_container(v,id):
-    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
-    return r.text, r.status_code
-
-
-"""
-## POST /{version}/containers/{id}/pause
-
-Pause a container {id}.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
-"""
-@app.route('/<v>/containers/<id>/pause', methods=['POST'])
-def pause_container(v,id):
-    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
-    return r.text, r.status_code
-
-"""
-## POST /{version}/containers/{id}/unpause
-
-Pause a container {id}.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
-"""
-@app.route('/<v>/containers/<id>/unpause', methods=['POST'])
-def unpause_container(v,id):
-    r = requests.post(get_docker_url(), headers=request.headers, data=request.data)
-    return r.text, r.status_code
-
-"""
 ## DELETE /{version}/containers/{id}
-
-Deletes a container {id}. The container is first killed by default.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 400 (test/plain)
-     bad parameter
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/<id>', methods=['DELETE'])
+#@token_required
 def delete_container(v,id):
     #TODO: first call /containers/{id}/kill
     r = requests.delete(get_docker_url(), headers=request.headers)
     return r.text, r.status_code
 
 """
-# Group Images Management
-Container cloud users may boot images from the private container cloud docker registry or docker hub. Images need to be registered in container cloud before they can be used in a container create or group start command.
-
-A new API (vs. implicit registration or use of glance API) is required for satisfying the following requirements:
-
-As a user (Maureen) of container cloud:
-* I want to be able to push and use images from a private docker repository
-* I want to be able to use public images from docker hub
-* I want to be able to mark some images so that they can start within a predictable time (e.g. pre-caching them on docker host nodes) and have control on which marking / unmarking such images.
-* I want to be able to control which images from docker hub or private docker registry can be used to launch containers in container cloud.
-* I want to be able to use images imported from Glance by a user interacting with the OpenStack Glance API
-
-"""
-
-"""
 ## POST /{version}/containers/images/register
-
-Register an image from docker hub or private docker registry in container cloud.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-
-```json
-    {
-         "Image": "docker-registry.mybluemix.net/wfaas/servicebroker:latest",
-         "FastStart": "true"
-    }
-```
-+ Response 201 (application/json)
-
-```json
-      {
-            "Id": "8dfafdbc3a43445566",
-      }
-```
-+ Response 400 (text/plain)
-     Bad parameter
-+ Response 401 (text/plain)
-+ Response 409 (text/plain)
-    Image already registered
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/images/register', methods=['POST'])
 #@token_required
@@ -819,46 +366,10 @@ def register_image(v):
     return r.text, r.status_code
 
 """
-## GET /{version}/containers/images
-
-List all available images in for a tenant in container cloud
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-
-```json
-       [
-         {
-          "Image": "docker-registry.mybluemix.net/wfaas/servicebroker:latest",
-          "Id": "12345667544332",
-          "Created": "2014-09-07T14:51:42.041847+02:00",
-          "FastStart": true,
-          "isReference": true
-         },
-          {
-          "Image": "ubuntu_latest",
-          "Id": "12345667544334",
-          "Created": "2014-09-08T14:51:42.041847+02:00",
-          "FastStart": false,
-          "isReference": false
-         },
-       ]
-```
-+ Response 201 (application/json)
-
-```json
-      {
-            "Id": "8dfafdbc3a43445566",
-      }
-```
-+ Response 401 (text/plain)
-+ Response 400 (text/plain)
-+ Response 500 (text/plain)
-
+## GET /{version}/containers/images/json
 """
-# TODO should we consider adding '/json' to be consistent with container list??
 @app.route('/<v>/containers/images/json', methods=['GET'])
+#@token_required
 def get_images(v):
     # TODO Something is wrong, I am only seeing two images in the response
     # from the next line...
@@ -868,102 +379,36 @@ def get_images(v):
 
 """
 ## PUT /{version}/containers/images/<id>
-
-Updates registered image. This API should be used if a new version with the same tag should replace the existing version or if the FastStart flag should be modified. Note that this API is a convenience which is equivalent to calling DELETE and then POST; as such it will always generate a new Id for the image.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-
-```json
-    {
-         "Image": "docker-registry.mybluemix.net/wfaas/servicebroker:latest",
-         "FastStart": false
-    }
-```
-+ Response 204 (application/json)
-
-```json
-      {
-            "Id": "8dfafdbc3a43445566",
-      }
-```
-+ Response 400 (text/plain)
-     Bad parameter
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    No such image
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/images/<id>', methods=['PUT'])
+#@token_required
 def update_image_registration(v,id):
    #TODO: how to implement ... no corresponding Docker API
    return "", 201
 
 """
 ## DELETE /{version}/containers/images/<id>
-
-Deletes registration for an existing registered image <id>.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-
-+ Response 204 (text/plain)
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    No such group
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/images/<id>', methods=['DELETE'])
+#@token_required
 def unregister_image(v,id):
     #TODO: this isn't right ... Docker API expects image name (not <id>)
     r = requests.delete(get_docker_url(), headers=request.headers)
     return r.text, r.status_code
 
-
 """
-# Group IP Addresses Management
-
+## POST /{version}/containers/build
 """
+@app.route('/<v>/containers/build', methods=['POST'])
+#@token_required
+def build_image(v):
+    return "TODO", 201
 
 """
 ## GET /{version}/containers/floating-ips{?all}
-
-
-Returns a list of (available) floating IPs
-
-+ Parameters
-    + all (optional, boolean, `1/True/true or 0/False/false`) ... Show all floating IPs - only available ones are shown by default.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 200 (application/json)
-
-```json
-   [
-         {
-                 "IpAddress": "192.123.12.13",
-                 "Bindings": null
-         },
-         {
-                 "IpAddress": "192.123.12.13",
-                 "Bindings": {"ContainerId":"ab04566123"}
-         }
-   ]
-```
-+ Response 400 (text/plain)
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/floating-ips', methods=['GET'])
+#@token_required
 def get_floating_ips(v):
     global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
     response = []
@@ -975,74 +420,22 @@ def get_floating_ips(v):
 
 """
 ## POST /{version}/containers/{id}/floating-ips/{ip}/bind
-
-Bind floating ip {ip} to container {id}
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 400 (test/plain)
-     no such ip
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/<id>/floating-ips/<ip>/bind', methods=['POST'])
+#@token_required
 def set_floating_ips(v,id, ip):
     return "", 204
 
 """
 ## POST /{version}/containers/{id}/floating-ips/{ip}/unbind
-
-Unbind floating ip {ip} from container {id}
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 400 (test/plain)
-     no such ip
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    no such container
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/<id>/floating-ips/<ip>/unbind', methods=['POST'])
+#@token_required
 def unset_floating_ips(v,id, ip):
     return "", 204
 
 """
 ## POST /{version}/containers/floating-ips/request
-
-Request a new floating ip for a tenant
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 200 (text/plain)
-     "158.85.33.143"
-+ Response 400 (text/plain)
-     Quota exceeded for resources: ['floatingip']
-+ Response 401 (text/plain)
-     Authentication required
-+ Response 404 (text/plain)
-     No external network interface found
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/floating-ips/request', methods=['POST'])
 # @token_required
@@ -1052,28 +445,8 @@ def request_floating_ips(v):
     #     return INVALID_TOKEN_FORMAT + msg,401
     return "Not implemented", 501
 
-
-
-
 """
 ## POST /{version}/containers/floating-ips/{ip}/release
-
-Release floating ip {ip} back to general pool
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 400 (text/plain)
-+ Response 401 (text/plain)
-     Authentication required
-+ Response 404 (text/plain)
-    no such ip
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/floating-ips/<ip>/release', methods=['POST'])
 #@token_required
@@ -1082,309 +455,124 @@ def release_floating_ips(v,ip):
     if ip.startswith("localhost:"):
         host_port = int(ip[len("localhost:"):])
         AVAILABLE_HOST_PORTS[host_port - FIRST_HOST_PORT] = True
-
-    # creds,msg = parse_token_for_creds(request.headers)
-    # if creds == None:
-    #     return INVALID_TOKEN_FORMAT + msg,401
     return "", 204
-
-
-"""
-# Group Scaling Groups Management
-
-"""
 
 """
 ## GET /{version}/containers/groups
-
-Returns a list of scaling groups
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 200 (application/json)
-
-```json
-   [
-         {
-           "Name": "MyGroup1",
-           "Id":"ab12cdaef",
-           "Memory":0,
-           "CpuShares": 512,
-           "Env":null,
-           "Cmd":[
-                 "date"
-            ],
-           "Image":"ubuntu",
-           "WorkingDir":"",
-           "RestartPolicy": { "Name": "always", "HealthCheckType" : "HttpHealthCheck", "HealthCheckUrl":"/ping" },
-           "NumberInstances": {"Desired":"2", "Min" : 1, "Max" : 4},
-           "AutoScalingPolicy" : {}
-         },
-         {
-          "Name": "MyGroup2",
-          "Id":"aa12cdaef",
-          "Memory":0,
-          "CpuShares": 512,
-          "Env":null,
-          "Cmd":[
-                 "date"
-          ],
-          "Image":"centos",
-          "WorkingDir":"",
-          "RestartPolicy": { "Name": "always", "HealthCheckType" : "HttpHealthCheck", "HealthCheckUrl":"/ping" },
-          "NumberInstances": {"Desired":"2", "Min" : 1, "Max" : 4},
-          "AutoScalingPolicy" : {}
-        }
-    ]
-```
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/groups', methods=['GET'])
+#@token_required
 def list_groups(v):
     groups = GROUP_STORE.list_groups()
     return get_response_text(200, json.dumps(groups), 'groups')
 
 """
-## POST /{version}/containers/groups/create
-
-Create a new scaling group.
-TODO - evaluate if I can pass tags / version info (would HEAT support that)
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-```json
-       {
-         "Name": "MyGroup3",
-         "Memory":0,
-         "CpuShares": 512,
-         "Env":null,
-         "Cmd":[
-                 "date"
-         ],
-         "Image":"keeper",
-         "WorkingDir":"",
-         "RestartPolicy": { "Name": "always", "HealthCheckType" : "HttpHealthCheck", "HealthCheckUrl":"/ping" },
-         "NumberInstances": {"Desired":"2", "Min" : 1, "Max" : 4},
-         "AutoScalingPolicy" : {}
-       }
-```
-+ Response 201 (application/json)
-
-```json
-      {
-            "Id": "8dfafdbc3a43",
-            "Warnings":[]
-      }
-```
-+ Response 400 (text/plain)
-     Bad parameter
-+ Response 401 (text/plain)
-+ Response 409 (text/plain)
-    Scaling group with that name already exists
-+ Response 500 (text/plain)
-
+## POST /{version}/containers/groups
 """
-@app.route('/<v>/containers/groups/create', methods=['POST'])
+@app.route('/<v>/containers/groups', methods=['POST'])
+#@token_required
 def create_group(v):
     group = json.loads(request.data)
     if "Name" not in group:
-        if request.args.get('name'): # TEMPORARY until group API is fixed
-            group["Name"] = request.args.get('name')
-        else:
-            return "Bad parameter", 400
+        return "Bad parameter", 400
     for g in GROUP_STORE.list_groups():
         if g["Name"] == group["Name"]:
             return "Scaling group with that name already exists", 409
-
-    #TODO BUG: This is a CCSAPI bug, "Env" should be list as in Docker, not a string
-    if "Env" in group and group["Env"]:
-        group["Env"] = group["Env"].split(',')
 
     group_id = GROUP_STORE.put_group(group)
     response = {"Id": group_id, "Warnings":[]}
     return json.dumps(response), 201
 
-"""
-## PUT /{version}/containers/groups/{id}
-
-Updates a scaling group. May pass only the JSON parameters to update (?).
-TODO - check what parameters might be updated from the HEAT template implementation.
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-```json
-       {
-         "Id": "8dfafdbc3a43",
-         "NumberInstances": {"Desired":"2", "Min" : 1, "Max" : 4},
-         "AutoScalingPolicy" : {}
-       }
-```
-+ Response 204 (text/plain)
-+ Response 400 (text/plain)
-     Bad parameter
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    No such group
-+ Response 500 (text/plain)
+#"""
+### POST /{version}/containers/groups/create
+#
+#DEPRICATED - replaced by
+# POST /{version}/containers/groups method
+#"""
+#@app.route('/<v>/containers/groups/create', methods=['POST'])
+#@token_required
+#def create_group_DEPRICATED(v):
+#    return create_group(v)
 
 """
-@app.route('/<v>/containers/groups/<id>', methods=['PUT'])
-def update_group(v,id):
+## PATCH /{version}/containers/groups/{name_or_id}
+"""
+@app.route('/<v>/containers/groups/<name_or_id>', methods=['PATCH'])
+#@token_required
+def update_group(v, name_or_id):
+    print "update_group data: %s" % request.data
     new_group = json.loads(request.data)
-    group = GROUP_STORE.get_group(id)
+    group = GROUP_STORE.get_group(name_or_id)
     if not group:
         return "Not found", 404
-    if "Id" in new_group and new_group["Id"] != id:
+    if "Id" in new_group and new_group["Id"] != group["Id"]:
         return "Invalid Id property", 400
-    if "NumberInstances" not in new_group or \
-       "Desired" not in new_group["NumberInstances"] or \
-       "Min" not in new_group["NumberInstances"] or \
-       "Max" not in new_group["NumberInstances"] or \
-       int(new_group["NumberInstances"]["Desired"]) < new_group["NumberInstances"]["Min"] or \
-       int(new_group["NumberInstances"]["Desired"]) > new_group["NumberInstances"]["Max"]:
-        return "Invalid NumberInstances property", 400
+    if "Name" in new_group and new_group["Name"] != group["Name"]:
+        return "Group name cannot be changed", 400
     group.update(new_group)
+    if "NumberInstances" not in group or \
+       "Desired" not in group["NumberInstances"] or \
+       "Min" not in group["NumberInstances"] or \
+       "Max" not in group["NumberInstances"] or \
+       int(group["NumberInstances"]["Desired"]) < group["NumberInstances"]["Min"] or \
+       int(group["NumberInstances"]["Desired"]) > group["NumberInstances"]["Max"]:
+        return "Invalid NumberInstances property", 400
     GROUP_STORE.put_group(group)
     return "", 204
 
 """
-## DELETE /{version}/containers/groups/{id}
+## GET /{version}/containers/groups/{name_or_id}
+"""
+@app.route('/<v>/containers/groups/<name_or_id>', methods=['GET'])
+#@token_required
+def get_group_info(v, name_or_id):
+    group = GROUP_STORE.get_group(name_or_id)
+    if not group:
+        app.logger.warning("get_group_info failed, no group with name or id {0}".format(name_or_id))
+        return "No such name or id {0}".format(name_or_id), 404
+    return get_response_text(200, json.dumps(group), 'group')
 
-Stops and deletes a scaling group.
+#"""
+### GET /{version}/containers/groups/{name_or_id}/containers
+#"""
+# moved to /containers/json
 
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 204 (text/plain)
-+ Response 401 (text/plain)
-+ Response 404 (text/plain)
-    No such group
-+ Response 500 (text/plain)
+#"""
+### GET /{version}/containers/groups/{id}/floating-ips
+#"""
+# TODO this method will be removed when Lin validates equivalent routercalls_util method works
 
 """
-@app.route('/<v>/containers/groups/<id>', methods=['DELETE'])
-def delete_group(v,id):
-    group = GROUP_STORE.get_group(id)
+## DELETE /{version}/containers/groups/{name_or_id}
+"""
+@app.route('/<v>/containers/groups/<name_or_id>', methods=['DELETE'])
+#@token_required
+def delete_group(v, name_or_id):
+    group = GROUP_STORE.get_group(name_or_id)
     if not group:
         return "Not found", 404
-    delete_instances(group)
-    GROUP_STORE.delete_group(id)
+    delete_instances(name_or_id)
+    GROUP_STORE.delete_group(group)
     return "", 204
 
 """
-## GET /{version}/containers/groups/{id}
-
-Returns status for containers in group {id}
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-
-+ Response 200 (application/json)
-
-```json
-   [
-          {
-           "Name": "cont1",
-           "Ip":"192.12.14.13",
-           "Status": "Up"
-           },
-           {
-           "Name": "cont2",
-           "Ip":"192.12.14.14",
-           "Status": "Stale"
-           }
-   ]
-```
-+ Response 401 (text/plain)
-+ Response 500 (text/plain)
+## POST /{version}/containers/groups/<name_or_id>/maproute
+"""
+@app.route('/<v>/containers/groups/<name_or_id>/maproute', methods=['POST'])
+#@token_required
+def maproute_containers_group(v, name_or_id):
+    return "TODO", 201
 
 """
-@app.route('/<v>/containers/groups/<id>', methods=['GET'])
-def get_group_info(v,id):
-    r = requests.get('http://%s/%s' % (DOCKER_REMOTE_HOST, 'containers/json?all=1'), headers={'Accept': 'application/json'})
-    if r.status_code != 200:
-        return r.text, r.status_code
-    status_code, running_containers = fixup_containers_response(r.json())
-    if status_code != 200:
-        return running_containers, status_code
-
-    if not GROUP_STORE.get_group(id):
-        app.logger.warning("get_group_health failed, no group id {0}".format(id))
-        return "No such id {0}".format(id), 404
-
-    group = GROUP_STORE.get_group(id)
-    group_prefix = group["Name"] + '_'
-
-    response = {}
-    response['Config'] = group
-    response['containers'] = []
-    for container in running_containers:
-        if container["Name"].startswith(group_prefix):
-            container_info = {
-                "Name": container["Name"],
-                "Ip": container["NetworkSettings"]["IpAddress"],
-                "Status": container["Status"],
-                "Id": container["Id"],
-            }
-            response['containers'].append(container_info)
-    return get_response_text(status_code, json.dumps(response), 'group')
+## POST /{version}/containers/groups/<name_or_id>/unmaproute
+"""
+@app.route('/<v>/containers/groups/<name_or_id>/unmaproute', methods=['POST'])
+#@token_required
+def unmap_route_containers_group(v, name_or_id):
+    return "TODO", 201
 
 """
 ## GET /{version}/containers/usage
-
-Show the current resource usage and list quota limits
-for my tenant
-
-+ Request (application/json)
-  + Headers
-       Accept:  application/json
-       X-Auth-Token: <TOKEN>
-
-+ Response 200 (application/json)
-```json
-    {
-     "Limits": {
-             "containers": 8,
-             "vcpu": 8,
-             "memory_MB": 2048,
-             "floating_ips": 2
-             },
-     "Usage": {
-             "containers": 5,
-             "running": 4,
-             "vcpu": 4,
-             "memory_MB": 1024,
-             "floating_ips": 2
-             }
-}
-
-```
-+ Response 400 (text/plain)
-     Bad request
-+ Response 401 (text/plain)
-     Authentication required
-+ Response 500 (text/plain)
-
 """
 @app.route('/<v>/containers/usage', methods=['GET'])
 #@token_required
@@ -1428,6 +616,38 @@ def get_limits(v):
     };
 
     return json.dumps(result), 200
+
+"""
+## PUT /{version}/registry/namespaces/<namespace>
+"""
+@app.route('/v2/registry/namespaces/<namespace>', methods=['PUT'])
+#@token_required
+def create_or_update_namespace(namespace):
+    return "TODO", 200
+
+"""
+## GET /{version}/registry/namespaces/<namespace>
+"""
+@app.route('/v2/registry/namespaces/<namespace>', methods=['GET'])
+#@token_required
+def get_namespace_by_name(namespace):
+    return "TODO", 200
+
+"""
+## GET /{version}/registry/namespaces
+"""
+@app.route('/v2/registry/namespaces', methods=['GET'])
+#@token_required
+def get_user_service_namespace():
+    return "TODO", 200
+
+"""
+## DELETE /{version}/registry/namespaces
+"""
+@app.route('/v2/registry/namespaces', methods=['DELETE'])
+#@token_required
+def delete_namespace():
+    return "TODO", 204
 
 
 ### Start up code

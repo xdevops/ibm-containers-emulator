@@ -43,7 +43,7 @@ def create_instance(group):
     create_url = 'http://%s/containers/create?name=%s' % (DOCKER_REMOTE_HOST, instance_name)
     create_body = {"Image": group["Image"]}
     if "Cmd" in group: 
-        create_body["Cmd"] = group["Emd"]
+        create_body["Cmd"] = group["Cmd"]
     if "Env" in group: 
         create_body["Env"] = group["Env"]
     r = requests.post(create_url, headers={'Content-Type': 'application/json'}, data=json.dumps(create_body))
