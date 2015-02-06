@@ -352,7 +352,11 @@ def get_logs(v,id):
 #@token_required
 def delete_container(v,id):
     #TODO: first call /containers/{id}/kill
-    r = requests.delete(get_docker_url(), headers=request.headers)
+    r = requests.delete(get_docker_url() + "?force=1", headers=request.headers)
+    
+    if r.status_code != 204:
+        app.logger.warning("delete_container {0} failed: {1}: {2}".format(id, r.status_code, r.text))
+
     return r.text, r.status_code
 
 """
@@ -551,7 +555,7 @@ def delete_group(v, name_or_id):
     group = GROUP_STORE.get_group(name_or_id)
     if not group:
         return "Not found", 404
-    delete_instances(name_or_id)
+    delete_instances(group)
     GROUP_STORE.delete_group(group)
     return "", 204
 
