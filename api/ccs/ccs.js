@@ -2,6 +2,9 @@ var ccs = window.ccs || {};
 
 ccs.endpoint = window.location.origin;
 
+ccs.monitoringEndpoint = 'http://158.85.90.250';
+console.log("TODO - set CCS monitoring endpoint");
+
 ccs.createdText = function(created) {
     if (created == 0) return '--';
 
@@ -19,3 +22,24 @@ ccs.createdText = function(created) {
 
     return t + ' seconds ago';
 };
+
+ccs.getMonitoringBody = function(id, resource_type, url, callback) {
+    $.ajax({
+        type: 'GET',
+        url: ccs.monitoringEndpoint + '/operations?',
+        headers: {
+            "Authorization": $context.auth_token,
+            "resourceType": resource_type,
+            "resourceId": id,
+            "resourceUrl": url,
+            "Content-Type":"application/json",
+            "X-Auth-Token": $context.auth_token
+        },
+        timeout: 10000
+    }).done(function(data, textStatus, xhr) {
+        callback(data);
+    }).fail(function(xhr, textStatus, err) {
+        callback(null);
+        console.log(err);
+    });
+}

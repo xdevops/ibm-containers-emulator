@@ -1,0 +1,81 @@
+.body-wrapper {
+    background-color: rgba(59, 75, 84, 1);
+    color: #fff;
+}
+
+.content-wrapper {
+  display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+  display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+  display: -ms-flexbox;      /* TWEENER - IE 10 */
+  display: -webkit-flex;     /* NEW - Chrome */
+  display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
+  flex-flow: row wrap;
+}
+
+.bmx-action-bar {
+   background-color: #26343F;
+   flex: 100%;
+   z-index: 75;
+   border-top: 1px solid rgba(122, 137, 145, 0.3);
+   /*
+   box-shadow: 0px 0px 5pt rgba(0, 0, 0, 0.3);
+   */
+   padding-top: 0px;
+   height: 50px;
+}
+
+.bmx-contextual-nav {
+   width: 280px;
+   min-width: 280px;
+   min-height: 600px;
+   background-color: #26343F;
+   border-top: 1px solid rgba(122, 137, 145, 0.3);
+   border-right: 1px solid rgba(122, 137, 145, 0.3);
+}
+
+.bmx-nav-title {
+    font-weight: 500;
+    padding: 15px 20px 10px 20px;
+}
+
+.bmx-contextual-nav ul {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+}
+
+.bmx-contextual-nav ul li {
+   font-stretch: normal;
+   font-weight: 600;
+   line-height: 2.5em;
+   height: 100%;
+   padding-left: 30px;
+   padding-right: 30px;
+}
+
+.bmx-contextual-nav ul li.section {
+    color: #94a3ab;
+}
+
+.bmx-contextual-nav ul li.active {
+   border-left: 5px solid #00b299;
+   background: rgba(27,37,45,0.5);
+}
+
+.bmx-contextual-nav ul li a {
+    /* display: inline-block; */
+    width: 100%;
+    color: #94a3ab;
+    outline: 0;
+}
+
+.bmx-contextual-nav ul li a:hover,
+.bmx-contextual-nav ul li.active a {
+    color: white;
+}
+
+.main-content {
+    flex: 1;
+    margin: 10px;
+}

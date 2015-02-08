@@ -14,7 +14,6 @@ ccs.GroupViewModel = function() {
     self.status = ko.observable();
     self.route = ko.observable();
     self.volumes = ko.observableArray();
-    self.containers = ko.observableArray();
     self.numContainers = ko.observable();
 
     // POST /{version}/containers/{id}/start
@@ -117,8 +116,8 @@ ccs.GroupViewModel = function() {
         var jso = {
             NumberInstances: {
                 Desired: Math.floor(self.numContainers()),
-                Min: 0,
-                Max: 8
+                Min: self.jso.NumberInstances.Min,
+                Max: self.jso.NumberInstances.Max
             }
         };
 
@@ -145,22 +144,11 @@ ccs.GroupViewModel = function() {
         self.cpu(cpu_percent);
         self.memory(jso.Memory);
         self.image(jso.Image);
-
+        self.numContainers(jso.NumberInstances.Desired); // this isn't necessarily the number of containers if they are spinning up - but otherwise would have to do calls to retrieve containers list filtered by group and then count.
         self.status('ACTIVE'); // TODO - this has to be computed
         self.port = jso.Port;
         self.route('--'); // TODO this has to be retrieved
         self.volumes([]); // TODO this has to be retrieved
-
-        // have to make another API call to get containers
-        // /v2/containers/json?group={id}
-        var url = ccs.endpoint + '/v2/containers/json?group=' + jso.Id;
-        $.getJSON(url, function(containers) {
-            containers.forEach(function(c) {
-                c.url = '/v2/containers/' + c.Id + '/json';
-            });
-            self.containers(containers);
-            self.numContainers(self.containers().length);
-        });
 
         self.monitor.init(self.jso.Id);
     };

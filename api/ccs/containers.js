@@ -7,7 +7,7 @@ ccs.ContainersViewModel = function() {
 
     self.soloContainers = ko.pureComputed(function() {
         return ko.utils.arrayFilter(self.containers(), function(c) {
-            return c.Group === undefined;
+            return (!c.Group || !c.Group.Id);
         });
     });
 

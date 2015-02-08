@@ -255,19 +255,20 @@ ccs.NewViewModel = function() {
             ```json
                 {
                      "Memory": 256,
-                     "Env": "key1=value1,key2=value2",
+                     "Env" : { "key1" : "value1", "key2" : "value2" },
+                     "Cmd" : "/bin/bash -c 'echo hello > /tmp/foo.txt'",
+                     "KeyName": "ssh-rsa ABBAB3NzaC1yc2EAAKWAAQABAAABAQC6tWjmNEjvxg8/kQKs+hXXhQZYmeGWInVYOptB0AAU7BLzt68XAuxuaqIEXbnUaUQOHgeaDVgt3FMLpkkZ39GcCeB1ix7LK/pSG5JPmueb/2FGC8Hdl8QTqq1nghLNbY97wUvJzRWZBBtCQ7GJFVldTyRV/997rX0l20o8OCydpdc1opUgLJ6IAAmsBPYVV4nqpy7t/NqiWudv94NrQx1Qpm/n/BAu4c3MGSdvZiLCS3knzPB9WNPt/hDqKgGKTBux5rcx4IHMQEY2g9uoL6J+xn5rRVezjxZHdYagBDXjFwCxjFU5jmfbzcqFZ/rHDuAz2YtyFZqw+8q2iO7B+Xav user@system.local"
                      "Image":"ubuntu",
                      "Expose": [22, 80],
                      "BluemixApp": "bluemix-app-name"
                 }
-            ```
+            ``
             */
             var jso = {
+                /* TODO: add Env, Cmd, KeyName, BluemixApp */
                 Name: self.launchData.name(),
                 Memory: self.launchData.selectedSize().memory_MB,
-                Env: "",
                 Image: self.launchData.image().Image
-                /* TODO: add bluemix add if specified */
             };
 
             var endpoint = ccs.endpoint + '/v2/containers/create';

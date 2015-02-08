@@ -14,6 +14,33 @@ ccs.ContainerViewModel = function() {
     self.privateIP = ko.observable();
     self.created = ko.observable();
 
+    self.showDetails = ko.observable(true);
+    self.navEntries = ko.observableArray();
+
+    self.navClick = function(nav) {
+        function callback(data) {
+            if (data)
+                console.log(data);
+            else
+                console.log('ERROR - NO DATA');
+        };
+
+        self.navEntries().forEach(function(entry) {
+            entry({id: entry().id, label: entry().label, selected: !entry().selected});
+        });
+
+        if (nav.id == 'monitoring') {
+            var body = ccs.getMonitoringBody(self.jso.Id, 'container', self.jso._subject, callback);
+            self.showDetails(false);
+
+            if (!body) body = "<h4>Error retrieving monitoring &amp; log data</h4>";
+            $("#containerMonitoring").replaceWith(body);
+        }
+        else {
+            self.showDetails(true);
+        }
+    };
+
     /*
     FROM MOCK_CCSAPI python source:
 
@@ -184,5 +211,10 @@ ccs.ContainerViewModel = function() {
         self.created(jso.Created);
 
         self.monitor.init(self.jso.Id);
+
+        self.navEntries([
+            ko.observable({id: 'overview', label: 'Overview', url: jso._subject, selected: true}),
+            ko.observable({id: 'monitoring', label: 'Monitoring and Logs', url: '/', selected: false})
+        ]);
     };
 }

@@ -12,9 +12,14 @@ ccs.GroupsViewModel = function() {
             //if (c.NetworkSettings.PublicIpAddress == '') c.NetworkSettings.PublicIpAddress = '--';
             c.NetworkSettings = {PublicIpAddress: '--', IpAddress: '--'};
             console.log('TODO: Created, IpAddress, PublicIpAddress, Status not part of response');
-            if (!c.Created) c.Created = 0;
-            c.Port = '--';
-            c.Status = '--'
+            if (c.Creation_time) {
+                var d = Date.parse(c.Creation_time);
+                c.Created = d;
+            }
+            if (!c.Port) c.Port = '--';
+            if (!c.Status) c.Status = '--';
+            if (!c.Image) c.Image = '--';
+
         });
         self.groups(jso);
     };

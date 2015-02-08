@@ -1,86 +1,106 @@
-<div id="page-container" data-bind="if: visible">
-  <div class="panel panel-primary">
-    <div class="panel-heading">
-      <div class="row">
-        <div class="col-md-1"><image src="/ccs/css/images/container-64x64.jpg"></div>
-        <div class="col-md-3">
-          <h1><span data-bind="text: name"></h1>
+<div class="content-wrapper" id="page-container" data-bind="if: visible">
+
+  <div class="bmx-contextual-nav">
+     <div class="bmx-nav-title text-uppercase field-ellipsis" data-bind="text: name"></div>
+     <ul data-bind="foreach: navEntries">
+        <li class="left-nav-item" data-bind="css: {active: selected}">
+           <a class="left-nav-link" data-bind="text: label, click: $parent.navClick"></a>
+           <!-- ko if: selected -->
+           <span class="pull-right">></span>
+           <!-- /ko -->
+        </li>
+     </ul>
+  </div>
+
+
+  <div class="main-content panel panel-bmx">
+
+    <div data-bind="if: showDetails">
+      <div class="panel-heading">
+        <div class="row">
+          <div class="col-md-1"><image src="/ccs/css/images/container-64x64.jpg"></div>
+          <div class="col-md-3">
+            <h1><span data-bind="text: name"></h1>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="panel-body">
-      <div class="row deployment-row">
-        <!-- container info widget -->
-        <div class="col-md-12">
-          <!-- basic info -->
-          <div class="col-md-2 bg-container container-info">
-            <img class="center-block container-image" src="/ccs/css/images/container-64x64.jpg" alt="container icon">
-            <p class="text-center">
-              <strong><span class="text-uppercase" data-bind="text: name"></span></strong><br>
-              Public IP: <span data-bind="text:publicIP"></span><br>
-              Private IP: <span data-bind="text:privateIP"></span>
-            </p>
-          </div>
-          <!-- basic container stats -->
-          <div class="col-md-2 bg-highlight container-info">
-            <form role="form" style="margin-top: 20px;">
-              <div class="form-group">
-                <label for="containerTotalCPU" class="container-label">TOTAL CPU</label>
-                <p class="big-number" id="containerTotalCPU"><span data-bind="text: cpu"></span> %</p>
-              </div>
-
-              <div class="form-group">
-                <label for="containerTotalMemory" class="container-label">TOTAL MEMORY</label>
-                <p class="big-number" id="containerTotalMemory">
-                  <span data-bind="text: memory"></span>
-                  <span>GB</span>
+      <div class="panel-body">
+          <div class="row deployment-row">
+            <!-- container info widget -->
+            <div class="col-md-12">
+              <!-- basic info -->
+              <div class="col-md-2 bg-container container-info">
+                <img class="center-block container-image" src="/ccs/css/images/container-64x64.jpg" alt="container icon">
+                <p class="text-center">
+                  <strong><span class="text-uppercase" data-bind="text: name"></span></strong><br>
+                  Public IP: <span data-bind="text:publicIP"></span><br>
+                  Private IP: <span data-bind="text:privateIP"></span>
                 </p>
               </div>
-            </form>
-          </div>
-          <!-- monitoring widget -->
-          <div class="col-md-5">
-            <div class="row" data-bind="with: monitor">
-              <div class="mainChartContainer col-md-9">
-                <span class="mChartTitle text-uppercase" data-bind="text: chartTitle"></span>
-                <div id="mChart"></div>
-                <p class="mChartDesc" data-bind="text: chartDesc"></p>
-              </div>
-
-              <div class="sideDataUpdate col-md-2">
-                <span class="dataTitle" data-bind="text: chartLabel"></span>
-                <span class="dataValue" data-bind="text: dataValue"></span>
-              </div>
-              <div class="col-md-1">
-                <div class="dropdown pull-right">
-                  <div class="dropdown-toggle" data-toggle="dropdown" id="dropdownMenu1" aria-exanded="true">
-                    <span class="fa fa-lg fa-gear text-monitor"></span>
+              <!-- basic container stats -->
+              <div class="col-md-2 bg-highlight container-info">
+                <form role="form" style="margin-top: 20px;">
+                  <div class="form-group">
+                    <label for="containerTotalCPU" class="container-label">TOTAL CPU</label>
+                    <p class="big-number" id="containerTotalCPU"><span data-bind="text: cpu"></span> %</p>
                   </div>
-                  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1" data-bind="foreach: chartConfig">
-                    <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: $parent.changeChart, text: chartTitle"></a></li>
-                  </ul>
+
+                  <div class="form-group">
+                    <label for="containerTotalMemory" class="container-label">TOTAL MEMORY</label>
+                    <p class="big-number" id="containerTotalMemory">
+                      <span data-bind="text: memory"></span>
+                      <span>GB</span>
+                    </p>
+                  </div>
+                </form>
+              </div>
+              <!-- monitoring widget -->
+              <div class="col-md-5">
+                <div class="row" data-bind="with: monitor">
+                  <div class="mainChartContainer col-md-9">
+                    <span class="mChartTitle text-uppercase" data-bind="text: chartTitle"></span>
+                    <div id="mChart"></div>
+                    <p class="mChartDesc" data-bind="text: chartDesc"></p>
+                  </div>
+
+                  <div class="sideDataUpdate col-md-2">
+                    <span class="dataTitle" data-bind="text: chartLabel"></span>
+                    <span class="dataValue" data-bind="text: dataValue"></span>
+                  </div>
+                  <div class="col-md-1">
+                    <div class="dropdown pull-right">
+                      <div class="dropdown-toggle" data-toggle="dropdown" id="dropdownMenu1" aria-exanded="true">
+                        <span class="fa fa-lg fa-gear text-monitor"></span>
+                      </div>
+                      <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1" data-bind="foreach: chartConfig">
+                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: $parent.changeChart, text: chartTitle"></a></li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              <div class="col-md-3 container-info bg-primary">
+                <h5>Container Health</h5>
+                <form role="form">
+                  <div class="form-group">
+                    <p id="containerState" class="container-state">
+                      <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
+                    </p>
+                      <div style="margin: 1.5em 0;"data-bind="foreach: allowedActions">
+                        <!-- ko if: enable -->
+                        <button class="btn btn-primary btn-sm" data-bind="click: method" style="border: 2px solid grey; margin-right: 10px; margin-bottom: 10px;"><span class="text-uppercase" data-bind="text: text"></span></button>
+                        <!-- /ko -->
+                      </div>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
-          <div class="col-md-3 container-info bg-primary">
-            <h5>Container Health</h5>
-            <form role="form">
-              <div class="form-group">
-                <p id="containerState" class="container-state">
-                  <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
-                </p>
-                  <div style="margin: 1.5em 0;"data-bind="foreach: allowedActions">
-                    <!-- ko if: enable -->
-                    <button class="btn btn-primary btn-sm" data-bind="click: method" style="border: 2px solid grey; margin-right: 10px; margin-bottom: 10px;"><span class="text-uppercase" data-bind="text: text"></span></button>
-                    <!-- /ko -->
-                  </div>
-              </div>
-            </form>
-          </div>
-        </div>
+          <hr>
       </div>
-      <hr>
     </div>
-  </div>
+
+    <div data-bind="ifnot: showDetails">
+      <div id="containerMonitoring">INSERT MONITORING BODY HERE</div>
+    </div>
 </div>

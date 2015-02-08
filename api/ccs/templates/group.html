@@ -103,30 +103,6 @@
 
       <hr>
 
-      <!-- containers list -->
-      <div class="row deployment-row">
-        <div class="col-md-12">
-          <h4>Containers</h4>
-          <table class="table table-striped table-hover">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Id</th>
-                <th>IP</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody data-bind="foreach: containers">
-              <tr>
-                <td class="field-ellipsis"><a data-bind="attr: {href: url}, text: Name"></a></td>
-                <td class="field-ellipsis"><span data-bind="text: Id"></span></td>
-                <td class="field-ellipsis"><span data-bind="text: NetworkSettings.IpAddress"></span></td>
-                <td><span class="text-success" data-bind="text: ContainerState"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   </div>
 </div>

@@ -45,6 +45,10 @@ HTML_TEMPLATE=\
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="//ace-common-dev.ng.bluemix.net/api/v1/css/common.css">
+    <link rel="stylesheet" href="//ace-common-dev.ng.bluemix.net/api/v1/css/header.css">
+    <script src="https://ace-common-dev.ng.bluemix.net/api/v1/js/header/header.js">
+
     <meta charset="UTF-8">
     <title></title>
 </head>
