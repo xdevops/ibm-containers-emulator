@@ -48,16 +48,9 @@ ccs.NewViewModel = function() {
         ports: ko.observable(),
         httpPort: ko.observable(),
         volumes: ko.observableArray(),
-        availableVolumes: ko.observableArray([
-            'Exiting Volume 1',
-            'Exiting Volume 2',
-            'Exiting Volume 3',
-            'Exiting Volume 4',
-            'Exiting Volume 5',
-        ]),
+        availableVolumes: ko.observableArray(),
         dockerRepos: ko.observableArray([
-            {name: 'Your Image Registry', url: window.location.origin + '/v2/containers/images/json'},
-            {name: 'DockerHub', url: window.location.protocol + '//' + window.location.hostname + ':4243/images/search?term='}
+            {name: 'Your Image Registry', url: window.location.origin + '/v2/containers/images/json'}
         ]),
         selectedRepo: ko.observable()
     };
@@ -88,7 +81,6 @@ ccs.NewViewModel = function() {
     };
 
     self.launchData.updateVolumes = function() {
-        console.log(self.launchData.volumes());
     }
 
     self.launchData.filteredImages = ko.pureComputed(function() {
@@ -308,6 +300,10 @@ ccs.NewViewModel = function() {
         self.launchData.volumes.push(new self.Volume());
         self.launchData.volumes.push(new self.Volume());
         self.launchData.volumes.push(new self.Volume());
+
+        // TODO
+        console.log('TODO - get available volumes');
+        console.log('TODO - get path to registry if it isnt /v2/containers/images');
     };
 
 };
