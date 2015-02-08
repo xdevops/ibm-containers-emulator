@@ -191,22 +191,30 @@
                   <td>Scalable Group:</td>
                   <td data-bind="text: isGroupText"></td>
                 </tr>
+                <!-- ko if: isGroup -->
                 <tr>
                   <td>Number of Instances:</td>
                   <td data-bind="text: desiredContainers"></td>
-                </tr>
-                <tr>
-                  <td>Public IP Address:</td>
-                  <td data-bind="text: publicIP"></td>
                 </tr>
                 <tr>
                   <td>Routes:</td>
                   <td data-bind="text: route"></td>
                 </tr>
                 <tr>
+                  <td>HTTP Port:</td>
+                  <td data-bind="text: httpPort"></td>
+                </tr>
+                <!-- /ko -->
+                <!-- ko ifnot: isGroup -->
+                <tr>
+                  <td>Public IP Address:</td>
+                  <td data-bind="text: publicIP"></td>
+                </tr>
+                <tr>
                   <td>Ports:</td>
                   <td data-bind="text: ports"></td>
                 </tr>
+                <!-- /ko -->
                 <tr>
                   <td>Volumes:</td>
                   <td>
