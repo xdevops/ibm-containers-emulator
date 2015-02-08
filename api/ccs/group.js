@@ -16,6 +16,33 @@ ccs.GroupViewModel = function() {
     self.volumes = ko.observableArray();
     self.numContainers = ko.observable();
 
+    self.showDetails = ko.observable(true);
+    self.navEntries = ko.observableArray();
+
+    self.navClick = function(nav) {
+        function callback(data) {
+            if (data)
+                console.log(data);
+            else
+                console.log('ERROR - NO DATA');
+        };
+
+        self.navEntries().forEach(function(entry) {
+            entry({id: entry().id, label: entry().label, selected: nav.id == entry().id});
+        });
+
+        if (nav.id == 'monitoring') {
+            var body = ccs.getMonitoringBody(self.jso.Id, 'container', self.jso._subject, callback);
+            self.showDetails(false);
+
+            if (!body) body = "<h4>Error retrieving monitoring &amp; log data</h4>";
+            $("#containerMonitoring").replaceWith(body);
+        }
+        else {
+            self.showDetails(true);
+        }
+    };
+
     // POST /{version}/containers/{id}/start
     self.doStart = function() {
         var url = self.jso._subject.replace('/json', '/start'); // TODO: kludge doing url synthesis
@@ -151,5 +178,12 @@ ccs.GroupViewModel = function() {
         self.volumes([]); // TODO this has to be retrieved
 
         self.monitor.init(self.jso.Id);
+
+        self.navEntries([
+            ko.observable({id: 'overview', label: 'Overview', url: jso._subject, selected: true}),
+            ko.observable({id: 'instances', label: 'Instances', url: jso._subject, selected: false}),
+            ko.observable({id: 'monitoring', label: 'Monitoring and Logs', url: '/', selected: false})
+        ]);
+
     };
 };

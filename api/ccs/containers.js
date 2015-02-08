@@ -4,6 +4,7 @@ ccs.ContainersViewModel = function() {
     var self = this;
     self.visible = ko.observable(false);
     self.containers = ko.observableArray();
+    self.navEntries = ko.observableArray();
 
     self.soloContainers = ko.pureComputed(function() {
         return ko.utils.arrayFilter(self.containers(), function(c) {

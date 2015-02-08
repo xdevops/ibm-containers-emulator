@@ -4,6 +4,7 @@ ccs.GroupsViewModel = function() {
     var self = this;
     self.visible = ko.observable(false);
     self.groups = ko.observableArray();
+    self.navEntries = ko.observableArray();
 
     self.init = function(jso) {
         self.groups.removeAll();

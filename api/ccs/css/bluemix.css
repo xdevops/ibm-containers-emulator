@@ -118,7 +118,7 @@ a.list-group-item:hover, a.list-group-item:focus {
     padding: 30px 30px 0 30px;
 }
 
-.panel-bmx>.panel-heading {
+.panel-bmx-heading {
     background-color: #26343f;
 }
 
