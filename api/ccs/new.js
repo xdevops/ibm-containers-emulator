@@ -128,8 +128,10 @@ ccs.NewViewModel = function() {
                 if (image.Image.toLowerCase().indexOf('<none>') == -1) {
                     //var d = new Date(image.Created);
                     //image.Created = d.getTime() / 1000;
-                    image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
-
+                    if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
+                        image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
+                    else
+                        image.VirtualSize = '--';
                     image.Name = image.Image;
                     image.Tag = '';
                     var name_tag = image.Name.split(':');
