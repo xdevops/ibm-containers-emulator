@@ -1,5 +1,8 @@
 var ccs = window.ccs || {};
 
+// set defaults on all ajax async calls
+$.ajaxSetup({timeout: 10*1000});
+
 //
 // The mapper hash uses a convention over configuration approach to create, bind, and track viewmodels
 //
