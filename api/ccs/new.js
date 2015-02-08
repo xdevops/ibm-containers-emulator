@@ -126,8 +126,8 @@ ccs.NewViewModel = function() {
             self.launchData.images.removeAll();
             data.forEach(function(image) {
                 if (image.Image.toLowerCase().indexOf('<none>') == -1) {
-                    var d = new Date(image.Created);
-                    image.Created = d.getTime() / 1000;
+                    //var d = new Date(image.Created);
+                    //image.Created = d.getTime() / 1000;
                     image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
 
                     image.Name = image.Image;

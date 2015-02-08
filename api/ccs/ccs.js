@@ -12,6 +12,19 @@ ccs.createdText = function(created) {
     var val = '--';
 
     var days = Math.floor(t / (60*60*24));
+    if (days > 364) {
+        var years = Math.floor(days/365);
+        return years + ' years ago';
+    }
+    if (days >= 30) {
+        var months = Math.floor(days/30);
+        return months + ' months ago';
+    }
+    if (days >=7 ) {
+        var weeks = Math.floor(days/7);
+        return weeks + ' weeks ago';
+    }
+
     if (days > 0) return days + ' days ago';
 
     var hours = Math.floor(t / (60*60));
