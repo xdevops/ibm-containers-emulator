@@ -4,7 +4,7 @@ ccs.NewViewModel = function() {
     var self = this;
     self.visible = ko.observable(false);
 
-    self.registryURL = ccs.endpoint + '/v2/containers/images';
+    self.registryURL = ko.observable(); //ccs.endpoint + '/v2/containers/images';
 
     self.step2 = ko.observable(false); // wizard page
     self.next = function() {
@@ -120,21 +120,39 @@ ccs.NewViewModel = function() {
         var localRepoCallback = function(data) {
             self.launchData.images.removeAll();
             data.forEach(function(image) {
+                //
+                // parsing image name for registry (has to begin with 'registry-ice')
+                // and namespace (format: registry/namespace/name:tag)
+                // ignore images without registry
+                //
                 if (image.Image.toLowerCase().indexOf('<none>') == -1) {
-                    //var d = new Date(image.Created);
-                    //image.Created = d.getTime() / 1000;
-                    if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
-                        image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
-                    else
-                        image.VirtualSize = '--';
-                    image.Name = image.Image;
-                    image.Tag = '';
-                    var name_tag = image.Name.split(':');
-                    if (name_tag[1]) {
-                        image.Name = name_tag[0];
-                        image.Tag =  name_tag[1];
+                    var image_segments = image.Image.split('/');
+                    var reg = image_segments.shift();
+                    if (reg.indexOf("registry-ice") !== -1) {
+                        if (image_segments.length > 2) {
+                            var namespace = image_segments[0];
+                            self.registryURL(reg + '/' + namespace);
+                        }
+                        else
+                            self.registryURL(reg);
+
+                        image.Name = image_segments.join('/')
+                        image.Tag = '';
+                        var name_tag = image.Name.split(':');
+                        if (name_tag[1]) {
+                            image.Name = name_tag[0];
+                            image.Tag =  name_tag[1];
+                        }
+
+                        //var d = new Date(image.Created);
+                        //image.Created = d.getTime() / 1000;
+                        if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
+                            image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
+                        else
+                            image.VirtualSize = '--';
+
+                        self.launchData.images.push(image);
                     }
-                    self.launchData.images.push(image);
                 }
             });
 
