@@ -4,16 +4,24 @@
 <link rel="stylesheet" href="/ccs/css/bluemix.css"></link>
 <link rel="stylesheet" href="/ccs/css/left-nav.css"></link>
 
+<header id="header"></header>
+
 <div class="body-wrapper" id="wrapper">
-    <div data-bind="template: {name: 'groups', if: visible}" id="page-groups"></div>
+    <div class="bmx-back-dashboard">
+        <div class="arrowDiv"><img class="i-back-arrow" src="/ccs/css/images/arrow.jpg"></div>
+        <div class="back-dashboard-link">Back to Dashboard</div>
+    </div>
+    <div class="page">
+        <div data-bind="template: {name: 'groups', if: visible}" id="page-groups"></div>
 
-    <div data-bind="template: {name: 'group', if: visible}" id="page-group"></div>
+        <div data-bind="template: {name: 'group', if: visible}" id="page-group"></div>
 
-    <div data-bind="template: {name: 'containers', if: visible}" id="page-containers"></div>
+        <div data-bind="template: {name: 'containers', if: visible}" id="page-containers"></div>
 
-    <div data-bind="template: {name: 'container', if: visible}" id="page-container"></div>
+        <div data-bind="template: {name: 'container', if: visible}" id="page-container"></div>
 
-    <div data-bind="template: {name: 'new', if: visible}" id="page-new"></div>
+        <div data-bind="template: {name: 'new', if: visible}" id="page-new"></div>
+    </div>
 </div>
 
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>

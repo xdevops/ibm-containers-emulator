@@ -1,6 +1,7 @@
 .body-wrapper {
-    background-color: rgba(59, 75, 84, 1);
-    color: #fff;
+  background-color: rgba(59, 75, 84, 1);
+  color: #fff;
+  padding-top: 45px;
 }
 
 .content-wrapper {
@@ -27,55 +28,112 @@
 .bmx-contextual-nav {
    width: 280px;
    min-width: 280px;
-   min-height: 600px;
-   background-color: #26343F;
+   min-height: 633px;
+   height: 900px;
+   display: inline-block;
+   vertical-align: top;
+   background-color: #212c36;
    border-top: 1px solid rgba(122, 137, 145, 0.3);
    border-right: 1px solid rgba(122, 137, 145, 0.3);
 }
 
 .bmx-nav-title {
-    font-weight: 500;
-    padding: 15px 20px 10px 20px;
+  font-weight: 500;
+  padding: 20px 20px 20px 20px;
+  border-top: 1px solid #28fadd;
 }
 
 .bmx-contextual-nav ul {
-    list-style: none;
-    margin: 0px;
-    padding: 0px;
-    border: 0px;
+  list-style: none;
+  margin: 0px;
+  padding: 0px;
+  border: 0px;
 }
 
+.bmx-contextual-nav ul li:hover {
+  border-left: 5px solid #455053;
+  padding-left: 25px;
+  background-color: #2f4046;
+}
+.bmx-contextual-nav ul li:hover a{
+  text-decoration:none;
+}
 .bmx-contextual-nav ul li {
-   font-stretch: normal;
-   font-weight: 600;
-   line-height: 2.5em;
-   height: 100%;
-   padding-left: 30px;
-   padding-right: 30px;
+  font-stretch: normal;
+    font-weight: bold;
+    height: 37px;
+    padding: 8px 30px 7px;
 }
 
 .bmx-contextual-nav ul li.section {
-    color: #94a3ab;
+  color: #94a3ab;
 }
 
 .bmx-contextual-nav ul li.active {
-   border-left: 5px solid #00b299;
-   background: rgba(27,37,45,0.5);
+
 }
 
 .bmx-contextual-nav ul li a {
-    /* display: inline-block; */
-    width: 100%;
+  display: inline-block;
     color: #94a3ab;
     outline: 0;
+    text-decoration:none;
+}
+.bmx-contextual-nav ul li span.active {
+  display: none;
+}
+.bmx-contextual-nav ul li.active span.active {
+  display: inline-block;
+  background-image: url("/images/sprite.png?20150123-0341");
+  background-position: -5px -7445px;
+  height: 10px;
+  width: 6px;
+  margin-left:15px;
 }
 
-.bmx-contextual-nav ul li a:hover,
 .bmx-contextual-nav ul li.active a {
-    color: white;
+  color: white;
 }
 
 .main-content {
-    flex: 1;
-    margin: 10px;
+  flex: 1;
+  margin: 10px;
+}
+
+.bmx-back-dashboard {
+  background-color: #1b252d;
+    cursor: default;
+    height: 50px;
+    display:block;
+    color: #b3b3b3;
+}
+.arrowDiv {
+   background-color: #1b252d;
+   display: inline-block;
+   text-align: center;
+    vertical-align: middle;
+    width: 55px;
+    padding-bottom: 3px;
+}
+.back-dashboard-link {
+  cursor: pointer;
+    line-height: 50px;
+    margin-left: 0;
+    width: 223px;
+    color: #94a3ab;
+     display: inline-block;
+}
+.i-back-arrow {
+  display: inline-block;
+  vertical-align: middle;
+  background-image: url("/images/sprite.png?20150123-0341");
+    background-position: -5px -769px;
+    /*height: 24px;
+    width: 24px; */
+}
+.bmx-back-dashboard:hover .i-back-arrow {
+    background-position: -5px -735px;
+}
+.bmx-back-dashboard:hover .back-dashboard-link {
+    color:white;
 }

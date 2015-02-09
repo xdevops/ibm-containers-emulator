@@ -2,7 +2,7 @@ var ccs = window.ccs || {};
 
 ccs.endpoint = window.location.origin;
 
-ccs.monitoringEndpoint = 'http://158.85.90.250';
+ccs.monitoringEndpoint = 'http://alchemyopsui.stage1.mybluemix.net';
 console.log("TODO - set CCS monitoring endpoint");
 
 ccs.createdText = function(created) {
@@ -39,14 +39,15 @@ ccs.createdText = function(created) {
 ccs.getMonitoringBody = function(id, resource_type, url, callback) {
     $.ajax({
         type: 'GET',
-        url: ccs.monitoringEndpoint + '/operations?',
+        url: ccs.monitoringEndpoint + '/operations?ace_config=' + JSON.stringify($context.ace_config),
         headers: {
             "Authorization": $context.auth_token,
             "resourceType": resource_type,
             "resourceId": id,
             "resourceUrl": url,
             "Content-Type":"application/json",
-            "X-Auth-Token": $context.auth_token
+            "X-Auth-Token": $context.auth_token,
+            "sessionID": url
         },
         timeout: 10000
     }).done(function(data, textStatus, xhr) {

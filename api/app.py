@@ -18,6 +18,7 @@ from groupstore import FileGroupStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
 import logging
 import sys
+import requests
 
 
 """
@@ -189,13 +190,19 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 #cors = CORS(app, allow_headers='Content-Type')
 
 
-"""
-# Launch Wizard route
-"""
+### Launch Wizard route
+
 @app.route('/<v>/containers/new', methods=['GET'])
 def get_launch_wizard(v):
     response_json = {}
     return get_response_text(200, json.dumps(response_json), 'new')
+
+### Supporting routes
+@app.route('/<v>/header', methods=['GET'])
+def get_globalnav_header(v):
+    header_url = "https://ace-common-dev.ng.bluemix.net/api/v1/header?selection=dashboard"
+    r = requests.get(header_url)
+    return r.text
 
 """
 ## POST /{version}/containers/tokens

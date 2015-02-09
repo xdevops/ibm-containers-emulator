@@ -19,10 +19,9 @@ ccs.ContainerViewModel = function() {
 
     self.navClick = function(nav) {
         function callback(data) {
-            if (data)
-                console.log(data);
-            else
-                console.log('ERROR - NO DATA');
+            self.showDetails(false);
+            if (!data) data = "<h4>Error retrieving monitoring &amp; log data</h4>";
+            $("#containerMonitoring").replaceWith(data);
         };
 
         self.navEntries().forEach(function(entry) {
@@ -30,11 +29,7 @@ ccs.ContainerViewModel = function() {
         });
 
         if (nav.id == 'monitoring') {
-            var body = ccs.getMonitoringBody(self.jso.Id, 'container', self.jso._subject, callback);
-            self.showDetails(false);
-
-            if (!body) body = "<h4>Error retrieving monitoring &amp; log data</h4>";
-            $("#containerMonitoring").replaceWith(body);
+            ccs.getMonitoringBody(self.jso.Id, 'container', self.jso._subject, callback);
         }
         else {
             self.showDetails(true);
