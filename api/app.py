@@ -47,14 +47,16 @@ HTML_TEMPLATE=\
 <head>
     <link rel="stylesheet" href="//ace-common-dev.ng.bluemix.net/api/v1/css/common.css">
     <link rel="stylesheet" href="//ace-common-dev.ng.bluemix.net/api/v1/css/header.css">
-    <script src="https://ace-common-dev.ng.bluemix.net/api/v1/js/header/header.js">
 
     <meta charset="UTF-8">
     <title></title>
 </head>
 <body>
     <div id="spa" style="display:none">
-        <span id="payload" resource-type="$resource_type" resource-url="$resource_url">
+        <span id="ace_config">
+            $ace_config
+        </span>
+        <span id="payload" resource-type="$resource_type" resource-url="$resource_url" auth-token="$auth_token">
             $json
         </span>
     </div>
@@ -64,13 +66,22 @@ HTML_TEMPLATE=\
 </html>
 '''
 
-def get_response_text(status_code, response_json_string, resource_type):
-    resource_url = request.url
+def parse_ace_config():
+    ace_config_string = request.args.get('ace_config')
+    return ace_config_string
+
+def get_response_text(status_code, response_json, resource_type):
+    auth_token = request.headers.get('X-Auth-Token')
+    if auth_token is None:
+        auth_token = 'NO.TOKEN_FOR.GUI'
+
+    resource_url = request.url.split('?')[0]
     best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
     if best == 'application/json' or status_code != 200:
-        return response_json_string, status_code
+        return response_json, status_code
     else:
-        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json_string, resource_type=resource_type, resource_url=resource_url), status_code
+        ace_config = parse_ace_config()
+        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type, resource_url=resource_url, auth_token = auth_token, ace_config = ace_config), status_code
 
 def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
