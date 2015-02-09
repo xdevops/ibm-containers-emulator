@@ -68,6 +68,9 @@ HTML_TEMPLATE=\
 
 def parse_ace_config():
     ace_config_string = request.args.get('ace_config')
+    if ace_config_string is None:
+        ace_config_string = "{}"
+
     return ace_config_string
 
 def get_response_text(status_code, response_json, resource_type):

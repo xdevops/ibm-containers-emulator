@@ -148,6 +148,11 @@
                   <label class="control-label" for="launchWizardExposedPorts">Exposed Ports:</label>
                   <input type="text" class="form-control input-sm" id="launchWizardExposedPorts" data-bind="value: ports">
                 </div>
+
+                <div class="form-group">
+                  <label class="control-label" for="launchWizardSSHKey">Optional SSH Key:</label>
+                  <textarea type="text" class="form-control input-sm" id="launchWizardSSHKey" placeholder="Paste your SSH key here" data-bind="textInput: SSHkey"></textarea>
+                </div>
                 <!-- /ko -->
 
                 <div class="form-group">
@@ -213,6 +218,10 @@
                 <tr>
                   <td>Ports:</td>
                   <td data-bind="text: ports"></td>
+                </tr>
+                <tr>
+                  <td>SSH Key:</td>
+                  <td class="field-ellipsis" data-bind="text: SSHkey"></td>
                 </tr>
                 <!-- /ko -->
                 <tr>

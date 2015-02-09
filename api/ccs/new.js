@@ -47,12 +47,15 @@ ccs.NewViewModel = function() {
         publicIP: ko.observable('--'),
         ports: ko.observable(),
         httpPort: ko.observable(),
+        SSHkey: ko.observable(),
         volumes: ko.observableArray(),
         availableVolumes: ko.observableArray(),
         dockerRepos: ko.observableArray([
             {name: 'Your Image Registry', url: window.location.origin + '/v2/containers/images/json'}
         ]),
-        selectedRepo: ko.observable()
+        selectedRepo: ko.observable(),
+        selectedBluemixApp: ko.observable(),
+
     };
     self.launchData.selectedRepo(self.launchData.dockerRepos()[0]);
 
@@ -264,6 +267,10 @@ ccs.NewViewModel = function() {
                 Memory: self.launchData.selectedSize().memory_MB,
                 Image: self.launchData.image().Image
             };
+            if (self.launchData.selectedBluemixApp())
+                jso['BluemixApp'] = self.launchData.selectedBluemixApp();
+            if (self.launchData.SSHkey())
+                jso['KeyName'] = self.launchData.SSHkey();
 
             var endpoint = ccs.endpoint + '/v2/containers/create';
             if (jso.Name) endpoint += '?name=' + jso.Name;
