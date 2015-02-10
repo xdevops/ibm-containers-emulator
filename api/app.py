@@ -309,8 +309,14 @@ def create_and_start_container(v):
 #@token_required
 def show_container_info(v,id):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
+    
+    if r.status_code != 200:
+        app.logger.warn("show_container_info for {2} -- Docker returned {0}: {1}".format(r.status_code, r.text, id))
+        return r.text, r.status_code
+
     container = r.json()
     status_code, response_json = fixup_container_info_response(container) if r.status_code == 200 else (r.status_code, r.text)
+    # (get_response_text returns a tuple)
     return get_response_text(status_code, json.dumps(response_json), 'container')
 
 """
