@@ -15,6 +15,7 @@ from flask import Flask, request
 #from flask.ext.cors import CORS
 from string import Template
 from groupstore import FileGroupStore
+from bindingstore import FileBindingStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
 import logging
 import sys
@@ -35,6 +36,7 @@ GET   /{version}/containers/new (launch wizard screen for containers and groups)
 
 APP_NAME=os.environ['APP_NAME'] if 'APP_NAME' in os.environ else 'ccs'
 GROUP_STORE=FileGroupStore(False)
+BINDING_STORE=FileBindingStore(False)
 # Only reset the GROUP_STORE if we determine it is out of sync with the current docker instances
 for group in GROUP_STORE.list_groups():
     if len(get_group_instances(group)) < group["NumberInstances"]["Min"]:
@@ -95,13 +97,6 @@ def get_docker_url():
     else:
         docker_path = '/'.join(path_segments[2:]) # /<v>/containers/xxx -> /containers/xxx
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
-
-#######################################################################################################################
-# TEMPORARY floating-ips kludge (will be removed when we get proper ccsapi ELBs)
-#######################################################################################################################
-NUM_HOST_PORTS = 9
-AVAILABLE_HOST_PORTS = [ True, True, True, True, True, True, True, True, True ]
-FIRST_HOST_PORT = 6001
 
 def get_container_state(container_json):
     # Return one of: 'Running' | 'NOSTATE' | 'Shutdown' | 'Crashed' | 'Paused' | 'Suspended'
@@ -282,22 +277,28 @@ def create_and_start_container(v):
     start_data = {}
 
     # TEMPORARY kludge for elb
-    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
+#    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
+    host_port = None
     if "Env" in create_and_start_data and create_and_start_data["Env"]:
         for var in create_and_start_data["Env"]:
             nv = var.split('=')
             if nv[0] == 'MOCK_ELB_PUBLIC_DOMAIN_NAME':
                 host_port = nv[1][len('localhost:'):]
-                port_index = int(host_port)-FIRST_HOST_PORT
-                if not AVAILABLE_HOST_PORTS[port_index]:
+#                port_index = int(host_port)-FIRST_HOST_PORT
+#                if not AVAILABLE_HOST_PORTS[port_index]:
+                if not BINDING_STORE.grab(int(host_port)):
                     return "Host port {0} is already allocated".format(host_port), 400
-                AVAILABLE_HOST_PORTS[port_index] = False
+#                AVAILABLE_HOST_PORTS[port_index] = False
                 start_data = '{"PortBindings": { "80/tcp": [{ "HostPort": "%s" }] }}' % host_port
                 break
 
     r = requests.post('http://%s/containers/%s/start' % (DOCKER_REMOTE_HOST, response['Id']), headers=request.headers, data=start_data)
     if r.status_code != 204:
         return r.text, r.status_code
+    
+    if host_port:
+        instance_name = request.full_path.split('/')[-1].split('?')[1].split('=')[1]
+        BINDING_STORE.associate_grabbed_ip(response['Id'], int(host_port), instance_name)
 
     return json.dumps(response), 201
 
@@ -377,12 +378,15 @@ def get_logs(v,id):
 """
 @app.route('/<v>/containers/<id>', methods=['DELETE'])
 #@token_required
-def delete_container(v,id):
-    #TODO: first call /containers/{id}/kill
+def delete_container(v, id):
+    app.logger.info("delete_container deleting {0}".format(id))
+    
     r = requests.delete(get_docker_url() + "?force=1", headers=request.headers)
     
     if r.status_code != 204:
         app.logger.warning("delete_container {0} failed: {1}: {2}".format(id, r.status_code, r.text))
+    else:
+        BINDING_STORE.remove_bindings(id)
 
     return r.text, r.status_code
 
@@ -441,12 +445,17 @@ def build_image(v):
 @app.route('/<v>/containers/floating-ips', methods=['GET'])
 #@token_required
 def get_floating_ips(v):
-    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
-    response = []
-    for i in range(0, NUM_HOST_PORTS):
-        if AVAILABLE_HOST_PORTS[i]:
-            host_port = FIRST_HOST_PORT + i
-            response.append({ "Bindings": None, "IpAddress": "localhost:%s" % host_port })
+#    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
+    # TODO Handle ?all vs not ?all
+    response = [{"Bindings": None, "IpAddress": "localhost:%s" % host_port} for host_port in BINDING_STORE.get_free_ips()]
+#    for i in range(0, NUM_HOST_PORTS):
+#        if AVAILABLE_HOST_PORTS[i]:
+#            host_port = FIRST_HOST_PORT + i
+#            response.append({ "Bindings": None, "IpAddress": "localhost:%s" % host_port })
+
+    if not response:
+        app.logger.warning("get_floating_ips out of floating IPs")
+
     return json.dumps(response), 200
 
 """
@@ -454,16 +463,36 @@ def get_floating_ips(v):
 """
 @app.route('/<v>/containers/<id>/floating-ips/<ip>/bind', methods=['POST'])
 #@token_required
-def set_floating_ips(v,id, ip):
-    return "", 204
+def set_floating_ips(v, id, ip):
+    """bind a floating IP (or ip:port) to a container
+    
+    @param id: string Docker ID
+    @param ip: string 'localhost:PORT'
+    """
+
+    if BINDING_STORE.bind(ip, id):
+        return "", 204
+    
+    app.logger.warn("Could not mock-bind {0} to {1}".format(ip, id))
+    return "Could not mock-bind {0} to {1}".format(ip, id), 400
 
 """
 ## POST /{version}/containers/{id}/floating-ips/{ip}/unbind
 """
 @app.route('/<v>/containers/<id>/floating-ips/<ip>/unbind', methods=['POST'])
 #@token_required
-def unset_floating_ips(v,id, ip):
-    return "", 204
+def unset_floating_ips(v, id, ip):
+    """disassociate a floating IP (or ip:port) to a container
+    
+    @param id: string Docker ID
+    @param ip: string 'localhost:PORT'
+    """
+    
+    if BINDING_STORE.unbind(ip, id):
+        return "", 204
+    
+    app.logger.warn("Could not unbind {0} from {1}".format(ip, id))
+    return "Could not unbind {0} from {1}".format(ip, id), 400
 
 """
 ## POST /{version}/containers/floating-ips/request
@@ -474,6 +503,7 @@ def request_floating_ips(v):
     # creds,msg = parse_token_for_creds(request.headers)
     # if creds == None:
     #     return INVALID_TOKEN_FORMAT + msg,401
+    app.logger.warning("request_floating_ips unexpectedly called")
     return "Not implemented", 501
 
 """
@@ -481,12 +511,14 @@ def request_floating_ips(v):
 """
 @app.route('/<v>/containers/floating-ips/<ip>/release', methods=['POST'])
 #@token_required
-def release_floating_ips(v,ip):
-    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
-    if ip.startswith("localhost:"):
-        host_port = int(ip[len("localhost:"):])
-        AVAILABLE_HOST_PORTS[host_port - FIRST_HOST_PORT] = True
-    return "", 204
+def release_floating_ips(v, ip):
+#    global AVAILABLE_HOST_PORTS # if this was for more than just a localhost test environment, you would want to protect this with a lock and store the allocation table in a shared DB
+#    if ip.startswith("localhost:"):
+#        host_port = int(ip[len("localhost:"):])
+#        AVAILABLE_HOST_PORTS[host_port - FIRST_HOST_PORT] = True
+#    return "", 204
+    app.logger.warning("release_floating_ips unexpectedly called")
+    return "Not implemented", 501
 
 """
 ## GET /{version}/containers/groups

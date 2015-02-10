@@ -8,3 +8,4 @@ build
 .groups
 .idea
 *.log
+api/bindings.json
