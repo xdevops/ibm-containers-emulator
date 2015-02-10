@@ -86,7 +86,7 @@ class FileBindingStore():
             return
         
         # Maybe we were supplied a name instead of an id
-        id = (id for id, name in self.container_to_name.items() if name==name_or_id).next()
+        id = next((id for id, name in self.container_to_name.items() if name==name_or_id), None)
         if id and self.container_to_port.get(id):
             logger.debug("mock-bind removing floating-ip bindings {1} for {0}".format(id, self.container_to_port.get(id)))
             self.unbind("localhost:{0}".format(self.container_to_port.get(id)), id)
