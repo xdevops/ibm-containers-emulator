@@ -630,7 +630,18 @@ def delete_group(v, name_or_id):
 @app.route('/<v>/containers/groups/<name_or_id>/maproute', methods=['POST'])
 #@token_required
 def maproute_containers_group(v, name_or_id):
-    return "TODO", 201
+    body = json.loads(request.data)
+    domain = body["domain"]
+    host = body.get("host")
+    route = host + "." + domain if host else domain
+    group = GROUP_STORE.get_group(name_or_id)
+    if not group:
+        return "Group not found", 404
+    if "MappedRoutes" not in group:
+        group["MappedRoutes"] = []
+    group["MappedRoutes"].append(route)
+    GROUP_STORE.put_group(group)
+    return json.dumps(group), 201
 
 """
 ## POST /{version}/containers/groups/<name_or_id>/unmaproute
@@ -638,7 +649,20 @@ def maproute_containers_group(v, name_or_id):
 @app.route('/<v>/containers/groups/<name_or_id>/unmaproute', methods=['POST'])
 #@token_required
 def unmap_route_containers_group(v, name_or_id):
-    return "TODO", 201
+    body = json.loads(request.data)
+    domain = body["domain"]
+    host = body.get("host")
+    route = host + "." + domain if host else domain
+    group = GROUP_STORE.get_group(name_or_id)
+    if not group:
+        return "Group not found", 404
+    if "MappedRoutes" in group:
+        for mapped_route in group["MappedRoutes"]:
+            if mapped_route == route:
+                group["MappedRoutes"].remove(mapped_route)
+                GROUP_STORE.put_group(group)
+                break
+    return json.dumps(group), 201
 
 """
 ## GET /{version}/containers/usage
