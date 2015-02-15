@@ -19,7 +19,6 @@ from bindingstore import FileBindingStore
 from instancemgr import DOCKER_REMOTE_HOST, delete_instances, get_group_instances
 import logging
 import sys
-import requests
 
 
 """

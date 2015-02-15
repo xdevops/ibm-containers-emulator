@@ -5,7 +5,7 @@ MOCK_CCSAPI is a shim that implements the [CCSAPI](https://github.rtp.raleigh.ib
 
 To use, first
 
-    ./run.sh
+    ./startup.sh
    
 ... to start the service.  
 
@@ -32,17 +32,11 @@ At this point, you may invoke ice commands which will operate against your local
 Terminating mock_ccsapi
 =====================================
    
-When you are finished testing, to shut down MOCK_CCSAPI, do control-C.  Then
+When you are finished testing, run
 
-    ps aux | grep "python api/app.py"
-    
-to get the PID.  Then do
-
-    kill <pid>
-
-If you are feeling brave, the one-liner is
-
-    kill `ps aux | grep "python api/app.py" | awk '{ print $2 }' | sort | head -n 1`
+    ./shutdown.sh
+   
+... to stop the service.  
     
 Configuring for *boot2docker*
 =====================================
