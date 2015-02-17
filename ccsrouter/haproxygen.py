@@ -70,7 +70,8 @@ def regen(ccsapi_url):
                         logger.info('>>>>>>>>>> container %s ip: %s', container["Name"], container["NetworkSettings"]["IpAddress"])
                         ip_address = container["NetworkSettings"]["IpAddress"]
                         if ip_address:
-                            servers[port-6000] += '    server %s %s:80 check\n' % (container["Name"], ip_address)
+                            server_port = group.get("Port", 80)
+                            servers[port-6000] += '    server %s %s:%s check\n' % (container["Name"], ip_address, server_port)
     generate(servers)
     return 0
 
