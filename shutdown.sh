@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Stop mock_ccsapi
+# Stop ccs-emulator
 #
-docker kill mock_ccsapi
-docker rm mock_ccsapi
+docker kill ccs-emulator
+docker rm ccs-emulator
