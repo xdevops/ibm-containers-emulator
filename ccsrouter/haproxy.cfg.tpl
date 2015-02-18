@@ -6,7 +6,7 @@ global
 defaults
     mode http
     balance roundrobin
-    option forceclose
+    option http-server-close
     retries 2
     timeout connect 1000ms
     timeout client 50000ms

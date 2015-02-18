@@ -1,4 +1,4 @@
 #!/bin/bash
 printenv
-export PYTHONPATH=/mock_ccsapi/api:$PYTHONPATH
+export PYTHONPATH=/ccs-emulator/api:$PYTHONPATH
 /usr/bin/supervisord -n
