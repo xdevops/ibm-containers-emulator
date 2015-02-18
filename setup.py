@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='mock_ccsapi',
+setup(name='ccs-emulator',
       version='0.1',
       description='A light-weight ccsapi server that delegates to a Docker daemon',
       author='Your Name',

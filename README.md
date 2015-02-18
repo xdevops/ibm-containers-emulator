@@ -1,7 +1,7 @@
-Testing with mock_ccsapi
+Testing with ccs-emulator
 =====================================
 
-MOCK_CCSAPI is a shim that implements the [CCSAPI](https://github.rtp.raleigh.ibm.com/project-alchemy/ccsapi) on top of a local Docker environment.
+ccs-emulator is a shim that implements the [CCSAPI](https://github.rtp.raleigh.ibm.com/project-alchemy/ccsapi) on top of a local Docker environment.
 
 To use, first
 
@@ -29,7 +29,7 @@ At this point, you may invoke ice commands which will operate against your local
     ice ps
     ice images
 
-Terminating mock_ccsapi
+Terminating ccs-emulator
 =====================================
    
 When you are finished testing, run
@@ -41,7 +41,7 @@ When you are finished testing, run
 Configuring for *boot2docker*
 =====================================
 
-mock_ccsapi only speaks HTTP, not HTTPS, so it is important that Docker be exposed via HTTP.
+ccs-emulator only speaks HTTP, not HTTPS, so it is important that Docker be exposed via HTTP.
 
 To do this with [boot2docker](http://boot2docker.io),
 
@@ -62,7 +62,7 @@ then restart boot2docker
 At this point, boot2docker will suggest new environment settings for `docker` itself.
 
 Recent boot2docker images configurations use the IANA Docker ports of 2375 (HTTP) and 2376 (TLS).
-mock_ccsapi is defaults to 4243, so to work with newer Docker defaults you must change this
+ccs-emulator defaults to 4243, so to work with newer Docker defaults you must change this
 
     export DOCKER_REMOTE_HOST=localhost:2375
     ./run.sh

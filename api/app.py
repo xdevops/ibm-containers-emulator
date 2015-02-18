@@ -636,9 +636,9 @@ def maproute_containers_group(v, name_or_id):
     group = GROUP_STORE.get_group(name_or_id)
     if not group:
         return "Group not found", 404
-    if "MappedRoutes" not in group:
-        group["MappedRoutes"] = []
-    group["MappedRoutes"].append(route)
+    if "Routes" not in group:
+        group["Routes"] = []
+    group["Routes"].append(route)
     GROUP_STORE.put_group(group)
     return json.dumps(group), 201
 
@@ -655,10 +655,10 @@ def unmap_route_containers_group(v, name_or_id):
     group = GROUP_STORE.get_group(name_or_id)
     if not group:
         return "Group not found", 404
-    if "MappedRoutes" in group:
-        for mapped_route in group["MappedRoutes"]:
+    if "Routes" in group:
+        for mapped_route in group["Routes"]:
             if mapped_route == route:
-                group["MappedRoutes"].remove(mapped_route)
+                group["Routes"].remove(mapped_route)
                 GROUP_STORE.put_group(group)
                 break
     return json.dumps(group), 201

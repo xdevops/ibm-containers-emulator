@@ -52,8 +52,8 @@ def regen(ccsapi_url):
         logger.info('>>>>>>>>>> failed to get groups: %s', groups_url)
         return 1
     for group in groups:
-        if group.get("MappedRoutes"):
-            for route in group["MappedRoutes"]:
+        if group.get("Routes"):
+            for route in group["Routes"]:
                 host, port = route.split(':')
                 port = int(port)
                 if host == 'localhost' and port >= 6000 and port <= 6009:

@@ -1,4 +1,4 @@
-# Dockerfile for mock-ccsapi
+# Dockerfile for ccs-emulator
 
 FROM ubuntu:14.04
 
