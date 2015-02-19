@@ -5,6 +5,7 @@ FROM ubuntu:14.04
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install supervisor python-virtualenv python-dev haproxy curl
 
 ADD api/*.py /ccs-emulator/api/
+ADD api/ccs /ccs-emulator/api/ccs
 
 EXPOSE 5000
 
