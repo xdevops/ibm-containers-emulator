@@ -38,7 +38,7 @@ GROUP_STORE=FileGroupStore(False)
 BINDING_STORE=FileBindingStore(False)
 # Only reset the GROUP_STORE if we determine it is out of sync with the current docker instances
 for group in GROUP_STORE.list_groups():
-    if len(get_group_instances(group)) < group["NumberInstances"]["Min"]:
+    if len(get_group_instances(group)) < group.get("NumberInstances", {}).get("Min", 0):
         GROUP_STORE.reset()
         break
 
@@ -540,13 +540,39 @@ def list_groups(v):
 @app.route('/<v>/containers/groups', methods=['POST'])
 #@token_required
 def create_group(v):
-    group = json.loads(request.data)
-    if "Name" not in group:
+    try:
+        group = request.get_json(force=True)
+    except ValueError, v:
+        app.logger.warning("create_group received invalid JSON")
+        return "create_group received invalid JSON", 400
+        
+    if "Name" not in group or "Image" not in group or 'NumberInstances' not in group:
         return "Bad parameter", 400
     for g in GROUP_STORE.list_groups():
         if g["Name"] == group["Name"]:
             return "Scaling group with that name already exists", 409
 
+    # Check that the requested image exists as a tag before returning 201
+    
+    images_url = "http://{0}/images/json?all=0".format(DOCKER_REMOTE_HOST)
+    r = requests.get(images_url, headers={'Accept': 'application/json'})
+    if r.status_code != 200:
+        return r.status_code, r.text
+    
+    found = False
+    imagetag = group["Image"]
+    if ':' not in imagetag:
+        imagetag = imagetag + ':latest'
+    for image in r.json():
+        if imagetag in image["RepoTags"]:
+            found = True
+            break
+
+    if not found:        
+        return "Unknown image {0}".format(group["Image"]), 400
+
+    # Image exists, so queue creation and return success
+    
     group_id = GROUP_STORE.put_group(group)
     response = {"Id": group_id, "Warnings":[]}
     return json.dumps(response), 201
