@@ -168,14 +168,16 @@ def fixup_container_info_response(container_json):
 def fixup_images_response(images_json):
     app.logger.debug("REACHED fixup_images_response, images_json={0}".format(images_json))
 
+    result_json = []
     for image in images_json:
         app.logger.warn("in fixup_images_response converting {0}".format(image))
 
-        # The following properties are ccsapi extensions
         if 'Image' not in image:
-            image['Image'] = image['RepoTags'][0]
+            for tag in image["RepoTags"]:
+                if tag.find("<none>") == -1:
+                    result_json.append({"Image": tag, "Created": image["Created"], "Id": image["Id"]})
 
-    return 200, images_json
+    return 200, result_json
 
 # init the flask app
 app = Flask(__name__, static_folder=APP_NAME)
