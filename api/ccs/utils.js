@@ -127,7 +127,7 @@ ld_util = (function () {
         request.send(json_str)
         return request
         }
-    function send_patch(resource_url, modification_count, patch_struct, handle_result, headers) {
+    function send_patch(resource_url, revision, patch_struct, handle_result, headers) {
         original_resource_url = resource_url = resource_url.toString()
         if (resource_url.indexOf('http:') === 0) {resource_url = resource_url.slice(5)} // don't force http if the browser is doing https
         else if (resource_url.indexOf('https:') === 0) {resource_url = resource_url.slice(6)} // don't force https if the browser is doing http
@@ -142,7 +142,7 @@ ld_util = (function () {
                 }
             }
         request.open("PATCH", resource_url, !!handle_result)
-        request.setRequestHeader('CE-ModificationCount', modification_count.toString())
+        request.setRequestHeader('CE-Revision', revision.toString())
         set_headers(headers, request)
         if (!hasHeader(headers, 'Content-type')) {
             request.setRequestHeader('Content-type', 'application/rdf+json+ce')
