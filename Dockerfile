@@ -11,7 +11,7 @@ EXPOSE 5000
 
 ADD ccsrouter /ccs-emulator/ccsrouter
 
-EXPOSE 6000 6001 6002 6003 6004 6005 6006 6007 6008 6009
+EXPOSE 6001 6002 6003 6004 6005 6006 6007 6008 6009
 
 ADD setup.py /ccs-emulator/setup.py
 WORKDIR /ccs-emulator

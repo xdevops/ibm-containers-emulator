@@ -2,7 +2,7 @@
 #
 # Starts ccs-emulator:
 #    - ccsapi server on port 5000
-#    - ccsrouter ports 6000-6009 (for user system ELBs)
+#    - ccsrouter ports 6001-6009 (for user system ELBs)
 #
 set -e
 
