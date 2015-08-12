@@ -20,12 +20,9 @@ logger.setLevel(logging.DEBUG)
 
 STORE_FILE_NAME = 'bindings.json'
 
-#######################################################################################################################
-# TEMPORARY floating-ips kludge (will be removed when we get proper ccsapi ELBs)
-#######################################################################################################################
+FIRST_HOST_PORT = 6001
 NUM_HOST_PORTS = 9
 AVAILABLE_HOST_PORTS = [ True ] * NUM_HOST_PORTS
-FIRST_HOST_PORT = 6001
 
 
 class FileBindingStore():

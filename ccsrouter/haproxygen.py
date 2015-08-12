@@ -12,6 +12,9 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 logger=logging.getLogger(__name__)
 
+FIRST_ROUTE_PORT = 6001
+NUM_ROUTE_PORTS = 9
+
 CONFIG_TPL = \
 """
 global
@@ -71,7 +74,7 @@ def regen(ccsapi_url):
             for route in group["Routes"]:
                 host, port = route.split(':')
                 port = int(port)
-                if host == 'localhost' and port >= 6000 and port <= 6009:
+                if host == 'localhost' and port >= FIRST_ROUTE_PORT and port < (FIRST_ROUTE_PORT + NUM_ROUTE_PORTS):
                     logger.info('>>>>>>>>>> group id: %s', group["Id"])
                     group_url = "{0}/json?group={1}".format(ccsapi_url, group["Id"])
                     group_details = get(group_url)
