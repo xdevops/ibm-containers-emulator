@@ -96,7 +96,7 @@ For example, with the hello example from the previous section running, you shoul
 
 ![groups screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/raw/master/images/groups.jpg)
 
-Here you create new container groups, click on an existing container group to view or edit its properties, or click on the trashcan icon to delete a group and shutdown its associated containers. For example, if you click on the *hello_example* group you should see the following screen:
+Here you can create new container groups, click on an existing group to view or edit its properties, or click on the trashcan icon to delete a group and shutdown its associated containers. For example, if you click on the *hello_example* group you should see the following screen:
 
 ![hello group screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/raw/master/images/hello_group.jpg)
 
