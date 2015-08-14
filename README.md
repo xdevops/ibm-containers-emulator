@@ -92,13 +92,30 @@ As you repeat the above curl request, over and over, you will get alternating re
 
 If you prefer to use a UI instead of the REST interface, to control your containers and groups, the IBM Containers emulator can also be controlled from your web browser. Simply point your browser to http://localhost:5000/v3/containers/json or http://localhost:5000/v3/containers/groups.
 
-For example, with the hello example, from the previous section, running, you should see the following at http://localhost:5000/v3/containers/groups:
+For example, with the hello example from the previous section running, you should see the following at http://localhost:5000/v3/containers/groups:
 
-![groups screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/images/raw/master/groups.jpg)
+![groups screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/raw/master/images/groups.jpg)
+
+Here you create new container groups, click on an existing container group to view or edit its properties, or click on the trashcan icon to delete a group and shutdown its associated containers. For example, if you click on the *hello_example* group you should see the following screen:
+
+![hello group screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/raw/master/images/hello_group.jpg)
+
+Try changing the number of instances to 3 and then press the **Save** button.
+
+If you wait about 10 seconds and then check your Docker containers, either using the UI (http://localhost:5000/v3/containers/json) or simply running "docker ps" again, you will see that you now have 2 instances of the hello example image running:
+
+```
+$ docker ps
+CONTAINER ID        IMAGE                         COMMAND                CREATED             STATUS              PORTS                                                      NAMES
+8aff88447f9f        hello:v1                      "python -u /hello/ap   8 seconds ago       Up 8 seconds        5000/tcp                                                   hello_example_5
+364c56ed7138        hello:v1                      "python -u /hello/ap   16 hours ago        Up 16 hours         5000/tcp                                                   hello_example_4
+0368617b9019        hello:v1                      "python -u /hello/ap   16 hours ago        Up 16 hours         5000/tcp                                                   hello_example_3
+cd76c5ff9b0e        xdevops/ccs-emulator:latest   "/ccs-emulator/run-s   24 hours ago        Up 24 hours         0.0.0.0:5000->5000/tcp, 0.0.0.0:6001-6009->6001-6009/tcp   ccs-emulator
+```
 
 ### Using the Cloud Foundry CLI and containers plug-in
 
-**TODO: replace ICE with CF IC instructions.**
+**TODO: change ICE instructions to CF IC instructions.**
 
 Use the [ice](https://github.rtp.raleigh.ibm.com/project-alchemy/ccscli) CLI to log in
 
