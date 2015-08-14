@@ -1,7 +1,7 @@
 import os, requests, json, time, threading
 from groupstore import FileGroupStore
 
-DOCKER_REMOTE_HOST=os.environ['DOCKER_REMOTE_HOST'] if 'DOCKER_REMOTE_HOST' in os.environ else 'localhost:4243'
+DOCKER_REMOTE_HOST=os.environ['DOCKER_REMOTE_HOST'] if 'DOCKER_REMOTE_HOST' in os.environ else 'localhost:2375'
 
 next_id = 1
 inc_lock = threading.Lock()

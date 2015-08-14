@@ -20,7 +20,7 @@ docker build -t $CCS_EMULATOR_IMAGE $SCRIPTDIR
 # run the emulator
 docker run \
     -d --name ccs-emulator \
-    -e DOCKER_REMOTE_HOST="${BRIDGE_IP}:4243" \
+    -e DOCKER_REMOTE_HOST="${BRIDGE_IP}:2375" \
     -e CCSAPI_URL="http://localhost:5000/v3/containers" \
     -p 6001-6009:6001-6009 -p 5000:5000 \
     $CCS_EMULATOR_IMAGE
