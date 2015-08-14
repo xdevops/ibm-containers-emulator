@@ -102,7 +102,7 @@ Here you can create new container groups, click on an existing group to view or 
 
 Try changing the number of instances to 3 and then press the **Save** button.
 
-If you wait about 10 seconds and then check your Docker containers, either using the UI (http://localhost:5000/v3/containers/json) or simply running "docker ps" again, you will see that you now have 2 instances of the hello example image running:
+If you wait about 10 seconds and then check your Docker containers, either using the UI (http://localhost:5000/v3/containers/json) or simply running "docker ps" again, you will see that you now have 3 instances of the hello example image running:
 
 ```
 $ docker ps
