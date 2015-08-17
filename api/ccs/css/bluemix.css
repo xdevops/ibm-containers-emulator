@@ -113,6 +113,10 @@ a.list-group-item:hover, a.list-group-item:focus {
     background-color: #26343f;
 }
 
+a.navbar-brand {
+    text-decoration: none;
+}
+
 .panel-bmx {
     background-color: #3b4b54;
     padding: 30px 30px 0 30px;

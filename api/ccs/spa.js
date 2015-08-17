@@ -3,20 +3,6 @@ var ccs = window.ccs || {};
 // set defaults on all ajax async calls
 $.ajaxSetup({timeout: 10*1000});
 
-// grab global nav
-var header_url = "/v2/header";
-$.ajax({
-    type: "GET",
-    url: header_url,
-    headers: {
-        "Content-Type": "text/html",
-        "X-Auth-Token": $context.auth_token,
-        "Access-Control-Allow-Origin": "localhost:5000"
-    }
-}).done(function(data) {
-    $("header").replaceWith(data);
-});
-
 //
 // The mapper hash uses a convention over configuration approach to create, bind, and track viewmodels
 //

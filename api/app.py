@@ -47,11 +47,8 @@ HTML_TEMPLATE=\
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="//ace-common-dev.ng.bluemix.net/api/v1/css/common.css">
-    <link rel="stylesheet" href="//ace-common-dev.ng.bluemix.net/api/v1/css/header.css">
-
     <meta charset="UTF-8">
-    <title></title>
+    <title>IBM CCS Emulator</title>
 </head>
 <body>
     <div id="spa" style="display:none">
@@ -296,7 +293,7 @@ def create_and_start_container(v):
     r = requests.post('http://%s/containers/%s/start' % (DOCKER_REMOTE_HOST, response['Id']), headers=request.headers, data=start_data)
     if r.status_code != 204:
         return r.text, r.status_code
-    
+
     if host_port:
         instance_name = request.full_path.split('/')[-1].split('?')[1].split('=')[1]
         BINDING_STORE.associate_grabbed_ip(response['Id'], int(host_port), instance_name)
@@ -310,7 +307,7 @@ def create_and_start_container(v):
 #@token_required
 def show_container_info(v,id):
     r = requests.get(get_docker_url(), headers={'Accept': 'application/json'})
-    
+
     if r.status_code != 200:
         app.logger.warn("show_container_info for {2} -- Docker returned {0}: {1}".format(r.status_code, r.text, id))
         return r.text, r.status_code
@@ -387,9 +384,9 @@ def get_logs(v,id):
 #@token_required
 def delete_container(v, id):
     app.logger.info("delete_container deleting {0}".format(id))
-    
+
     r = requests.delete(get_docker_url() + "?force=1", headers=request.headers)
-    
+
     if r.status_code != 204:
         app.logger.warning("delete_container {0} failed: {1}: {2}".format(id, r.status_code, r.text))
     else:
@@ -472,14 +469,14 @@ def get_floating_ips(v):
 #@token_required
 def set_floating_ips(v, id, ip):
     """bind a floating IP (or ip:port) to a container
-    
+
     @param id: string Docker ID
     @param ip: string 'localhost:PORT'
     """
 
     if BINDING_STORE.bind(ip, id):
         return "", 204
-    
+
     app.logger.warn("Could not mock-bind {0} to {1}".format(ip, id))
     return "Could not mock-bind {0} to {1}".format(ip, id), 400
 
@@ -490,14 +487,14 @@ def set_floating_ips(v, id, ip):
 #@token_required
 def unset_floating_ips(v, id, ip):
     """disassociate a floating IP (or ip:port) to a container
-    
+
     @param id: string Docker ID
     @param ip: string 'localhost:PORT'
     """
-    
+
     if BINDING_STORE.unbind(ip, id):
         return "", 204
-    
+
     app.logger.warn("Could not unbind {0} from {1}".format(ip, id))
     return "Could not unbind {0} from {1}".format(ip, id), 400
 
@@ -547,7 +544,7 @@ def create_group(v):
     except ValueError, v:
         app.logger.warning("create_group received invalid JSON")
         return "create_group received invalid JSON", 400
-        
+
     if "Name" not in group or "Image" not in group or 'NumberInstances' not in group:
         return "Bad parameter", 400
     for g in GROUP_STORE.list_groups():
@@ -555,12 +552,12 @@ def create_group(v):
             return "Scaling group with that name already exists", 409
 
     # Check that the requested image exists as a tag before returning 201
-    
+
     images_url = "http://{0}/images/json?all=0".format(DOCKER_REMOTE_HOST)
     r = requests.get(images_url, headers={'Accept': 'application/json'})
     if r.status_code != 200:
         return r.status_code, r.text
-    
+
     found = False
     imagetag = group["Image"]
     if ':' not in imagetag:
@@ -570,11 +567,11 @@ def create_group(v):
             found = True
             break
 
-    if not found:        
+    if not found:
         return "Unknown image {0}".format(group["Image"]), 400
 
     # Image exists, so queue creation and return success
-    
+
     group_id = GROUP_STORE.put_group(group)
     response = {"Id": group_id, "Warnings":[]}
     return json.dumps(response), 201

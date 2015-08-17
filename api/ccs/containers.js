@@ -24,6 +24,8 @@ ccs.ContainersViewModel = function() {
         });
         self.containers(jso);
 
+        console.log(self.containers());
+
         // we get the list of groups because the dashboard UI displays both the groups and the containers without a group
         // in the "List of Containers"
         $.ajax({
