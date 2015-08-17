@@ -12,6 +12,42 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 logger=logging.getLogger(__name__)
 
+FIRST_ROUTE_PORT = 6001
+NUM_ROUTE_PORTS = 9
+
+CONFIG_TPL = \
+"""
+global
+    daemon
+    maxconn 256
+    pidfile /var/run/haproxy-private.pid
+
+defaults
+    mode http
+    balance roundrobin
+    option http-server-close
+    retries 2
+    timeout connect 1000ms
+    timeout client 50000ms
+    timeout server 50000ms
+
+listen admin
+    bind *:8080
+    stats enable
+
+{routes}
+"""
+
+ROUTE_TPL = \
+"""
+frontend route_{port}
+    bind *:{port}
+    default_backend default.route_{port}
+
+backend default.route_{port}
+{servers}
+"""
+
 def get(request_url):
     try:
         r = requests.get(request_url, headers={'Accept': 'application/json'})
@@ -25,38 +61,20 @@ def get(request_url):
         logger.info('Successful GET of %s', request_url)        
     return r.json()
 
-def generate(servers):
-    path = os.path.abspath(__file__)
-    dir_path = os.path.dirname(path)
-    f = open(dir_path + '/haproxy.cfg.tpl')
-    tpl = f.read()
-    f.close()
-    rslt = tpl.format(servers_6000 = servers[0], 
-                      servers_6001 = servers[1],
-                      servers_6002 = servers[2],
-                      servers_6003 = servers[3],
-                      servers_6004 = servers[4],
-                      servers_6005 = servers[5],
-                      servers_6006 = servers[6],
-                      servers_6007 = servers[7],
-                      servers_6008 = servers[8],
-                      servers_6009 = servers[9])
-    print rslt
-    
 def regen(ccsapi_url):
     logger.info('Regenerating ccsrouter HAProxy configuration. ccsapi_url: %s', ccsapi_url)
-    servers = ['','','','','','','','','','']
     groups_url = "{0}/groups".format(ccsapi_url)
     groups = get(groups_url)
     if groups is None:
         logger.info('>>>>>>>>>> failed to get groups: %s', groups_url)
         return 1
+    routes = ''
     for group in groups:
         if group.get("Routes"):
             for route in group["Routes"]:
                 host, port = route.split(':')
                 port = int(port)
-                if host == 'localhost' and port >= 6000 and port <= 6009:
+                if host == 'localhost' and port >= FIRST_ROUTE_PORT and port < (FIRST_ROUTE_PORT + NUM_ROUTE_PORTS):
                     logger.info('>>>>>>>>>> group id: %s', group["Id"])
                     group_url = "{0}/json?group={1}".format(ccsapi_url, group["Id"])
                     group_details = get(group_url)
@@ -65,18 +83,20 @@ def regen(ccsapi_url):
                         return 1
                     if len(group_details) == 0:
                         logger.info('>>>>>>>>>> group: {0} has no container instances'.format(group_url))
-                        
+                    servers = ''   
                     for container in group_details:
                         logger.info('>>>>>>>>>> container %s ip: %s', container["Name"], container["NetworkSettings"]["IpAddress"])
                         ip_address = container["NetworkSettings"]["IpAddress"]
                         if ip_address:
                             server_port = group.get("Port", 80)
-                            servers[port-6000] += '    server %s %s:%s check\n' % (container["Name"], ip_address, server_port)
-    generate(servers)
+                            servers += '    server %s %s:%s check\n' % (container["Name"], ip_address, server_port)
+                    if servers:
+                        routes += ROUTE_TPL.format(port=port, servers=servers)
+    print CONFIG_TPL.format(routes=routes)
     return 0
 
 def init():
-    generate(['','','','','','','','','',''])
+    print CONFIG_TPL.format(routes='')
     return 0
 
 if __name__ == '__main__':

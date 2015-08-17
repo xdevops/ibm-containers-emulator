@@ -422,8 +422,8 @@ def get_images(v):
 @app.route('/<v>/containers/images/<id>', methods=['PUT'])
 #@token_required
 def update_image_registration(v,id):
-   #TODO: how to implement ... no corresponding Docker API
-   return "", 201
+    #TODO: how to implement ... no corresponding Docker API
+    return "", 201
 
 """
 ## DELETE /{version}/containers/images/<id>
