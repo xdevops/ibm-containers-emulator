@@ -21,7 +21,10 @@ ccs.ContainersViewModel = function() {
         jso.forEach(function(c) {
             c.url = '/v2/containers/' + c.Id + '/json';
             if (c.NetworkSettings.PublicIpAddress == '') c.NetworkSettings.PublicIpAddress = '--';
+            // add flag to say whether container part of a group
+            c.InGroup = c.Group && c.Group.Id ? 'yes' : 'no';
         });
+
         self.containers(jso);
 
         console.log(self.containers());

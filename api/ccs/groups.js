@@ -7,6 +7,7 @@ ccs.GroupsViewModel = function() {
     self.navEntries = ko.observableArray();
 
     self.init = function(jso) {
+        console.log(jso);
         self.groups.removeAll();
         jso.forEach(function(c) {
             c.url = '/v2/containers/groups/' + c.Id;

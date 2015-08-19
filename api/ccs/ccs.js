@@ -3,7 +3,6 @@ var ccs = window.ccs || {};
 ccs.endpoint = window.location.origin;
 
 ccs.monitoringEndpoint = 'http://alchemyopsui.stage1.mybluemix.net';
-console.log("TODO - set CCS monitoring endpoint");
 
 ccs.createdText = function(created) {
     if (created == 0) return '--';

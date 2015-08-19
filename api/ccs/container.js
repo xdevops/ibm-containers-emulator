@@ -191,6 +191,8 @@ ccs.ContainerViewModel = function() {
     self.monitor = new ccs.Monitor();
 
     self.init = function(jso) {
+        console.log(jso);
+
         self.jso = jso;
         self.name(jso.Name.replace('/',''));
 
