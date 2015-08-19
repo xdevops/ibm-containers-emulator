@@ -1,6 +1,7 @@
 # A simple file system based group store.
 #
 import os, binascii, shutil, json
+from datetime import datetime
 
 DEFAULT_STORE_DIR = '.groups'
 STORE_FILE_SUFFIX = '.json'
@@ -44,7 +45,17 @@ class FileGroupStore():
         with open(file_path, 'w') as group_file:
             json.dump(group, group_file)
         return group_id
-        
+    
+    def create_group(self, group):
+        group['Status'] = "CREATE_COMPLETE"
+        group['Creation_time'] = datetime.utcnow().isoformat()
+        return self.put_group(group)
+
+    def update_group(self, group):
+        group['Status'] = "UPDATE_COMPLETE"
+        group['Updated_time'] = datetime.utcnow().isoformat()
+        return self.put_group(group)
+      
     def delete_group(self, group):
         file_path = self.group_id_to_file(group['Id'])
         os.unlink(file_path)

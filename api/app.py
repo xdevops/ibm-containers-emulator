@@ -572,7 +572,7 @@ def create_group(v):
 
     # Image exists, so queue creation and return success
 
-    group_id = GROUP_STORE.put_group(group)
+    group_id = GROUP_STORE.create_group(group)
     response = {"Id": group_id, "Warnings":[]}
     return json.dumps(response), 201
 
@@ -610,7 +610,7 @@ def update_group(v, name_or_id):
        int(group["NumberInstances"]["Desired"]) < group["NumberInstances"]["Min"] or \
        int(group["NumberInstances"]["Desired"]) > group["NumberInstances"]["Max"]:
         return "Invalid NumberInstances property", 400
-    GROUP_STORE.put_group(group)
+    GROUP_STORE.update_group(group)
     return "", 204
 
 """
@@ -664,7 +664,7 @@ def maproute_containers_group(v, name_or_id):
     if "Routes" not in group:
         group["Routes"] = []
     group["Routes"].append(route)
-    GROUP_STORE.put_group(group)
+    GROUP_STORE.update_group(group)
     return json.dumps(group), 201
 
 """
@@ -684,7 +684,7 @@ def unmap_route_containers_group(v, name_or_id):
         for mapped_route in group["Routes"]:
             if mapped_route == route:
                 group["Routes"].remove(mapped_route)
-                GROUP_STORE.put_group(group)
+                GROUP_STORE.update_group(group)
                 break
     return json.dumps(group), 201
 
