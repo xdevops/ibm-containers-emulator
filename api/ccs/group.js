@@ -15,29 +15,8 @@ ccs.GroupViewModel = function() {
     self.route = ko.observable();
     self.volumes = ko.observableArray();
     self.numContainers = ko.observable();
-
+    self.containers = ko.observable();
     self.showDetails = ko.observable(true);
-    self.navEntries = ko.observableArray();
-
-    self.navClick = function(nav) {
-        function callback(data) {
-            self.showDetails(false);
-            if (!data) data = "<h4>Error retrieving monitoring &amp; log data</h4>";
-            $("#groupMonitoring").replaceWith(data);
-        };
-
-        self.navEntries().forEach(function(entry) {
-            entry({id: entry().id, label: entry().label, selected: nav.id == entry().id});
-        });
-
-        if (nav.id == 'monitoring') {
-            var group_instance_url = ccs.endpoint + '/v2/containers/json?group=' + self.name();
-            var body = ccs.getMonitoringBody(self.jso.Id, 'containerASG', group_instance_url, callback);
-        }
-        else {
-            self.showDetails(true);
-        }
-    };
 
     // POST /{version}/containers/{id}/start
     self.doStart = function() {
@@ -157,6 +136,25 @@ ccs.GroupViewModel = function() {
         });
     };
 
+    self.getContainers = function() {
+        var query_url = '/v2/containers/json?group=' + self.jso.Id;
+        $.ajax({
+            type: 'GET',
+            url: query_url,
+            headers: {
+                "Accept":"application/json",
+                "X-Auth-Token": $context.auth_token
+            }
+        }).done(function(data, textStatus, xhr) {
+            var containers = JSON.parse(data);
+            containers.forEach(function(c) {
+                c.url = '/v2/containers/' + c.Id + '/json';
+            });
+            self.containers(containers);
+            console.log(self.containers());
+        });
+    };
+
     self.init = function(jso) {
         console.log('TODO - HACK for groups detail - check with real API');
 
@@ -175,11 +173,6 @@ ccs.GroupViewModel = function() {
 
         self.monitor.init(self.jso.Id);
 
-        self.navEntries([
-            ko.observable({id: 'overview', label: 'Overview', url: jso._subject, selected: true}),
-            ko.observable({id: 'instances', label: 'Instances', url: jso._subject, selected: false}),
-            ko.observable({id: 'monitoring', label: 'Monitoring and Logs', url: '/', selected: false})
-        ]);
-
+        self.getContainers();
     };
 };

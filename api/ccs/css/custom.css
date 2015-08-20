@@ -9,6 +9,11 @@ textarea {
     font-family: "DroidSans", "CourierNew", "Courier";
 }
 
+th.id-col, td.id-col {
+  max-width: 15em;
+  overflow: ellipsis;
+}
+
 .panel-body hr {
   border-top: 1px solid darkgrey;
 }
@@ -18,7 +23,7 @@ textarea {
 
 .navbar-default {
     border-radius: 0;
-    margin-bottom: 0;
+    /* margin-bottom: 0; */
 }
 
 .navbar-default .navbar-text {
@@ -183,6 +188,7 @@ textarea {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 20em;
 }
 
 .scrollable-div {
