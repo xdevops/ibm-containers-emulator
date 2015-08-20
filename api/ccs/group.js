@@ -112,8 +112,6 @@ ccs.GroupViewModel = function() {
         return actions;
     });
 
-    self.monitor = new ccs.Monitor();
-
     self.updateInstances = function() {
         var jso = {
             NumberInstances: {
@@ -151,7 +149,6 @@ ccs.GroupViewModel = function() {
                 c.url = '/v2/containers/' + c.Id + '/json';
             });
             self.containers(containers);
-            console.log(self.containers());
         });
     };
 
@@ -171,8 +168,15 @@ ccs.GroupViewModel = function() {
         self.route('--'); // TODO this has to be retrieved
         self.volumes([]); // TODO this has to be retrieved
 
-        self.monitor.init(self.jso.Id);
-
         self.getContainers();
+
+        //Clear update interval if it exist
+        if (self.updateInterval) clearInterval(self.updateInterval);
+
+        //Setup new update loop with current target
+        self.updateInterval = setInterval(function(){
+            self.getContainers();
+        }, 5000);
+
     };
 };

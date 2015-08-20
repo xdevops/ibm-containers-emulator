@@ -14,6 +14,10 @@ th.id-col, td.id-col {
   overflow: ellipsis;
 }
 
+.with-buttons {
+  padding-bottom: 10px;
+}
+
 .panel-body hr {
   border-top: 1px solid darkgrey;
 }

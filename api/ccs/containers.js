@@ -14,6 +14,27 @@ ccs.ContainersViewModel = function() {
 
     self.groups = ko.observableArray();
 
+    self.getContainers = function() {
+        var query_url = '/v2/containers/json';
+        $.ajax({
+            type: 'GET',
+            url: query_url,
+            headers: {
+                "Accept":"application/json",
+                "X-Auth-Token": $context.auth_token
+            }
+        }).done(function(data, textStatus, xhr) {
+            var containers = JSON.parse(data);
+            containers.forEach(function(c) {
+                c.url = '/v2/containers/' + c.Id + '/json';
+                if (c.NetworkSettings.PublicIpAddress == '') c.NetworkSettings.PublicIpAddress = '--';
+                // add flag to say whether container part of a group
+                c.InGroup = c.Group && c.Group.Id ? 'yes' : 'no';
+            });
+            self.containers(containers);
+        });
+    };
+
     self.init = function(jso) {
         self.containers.removeAll();
         self.groups.removeAll();
@@ -53,6 +74,15 @@ ccs.ContainersViewModel = function() {
                 });
             });
         });
+
+        //Clear update interval if it exist
+        if (self.updateInterval) clearInterval(self.updateInterval);
+
+        //Setup new update loop with current target
+        self.updateInterval = setInterval(function(){
+            self.getContainers();
+        }, 5000);
+
     };
 
     self.containerURL = function(c) {

@@ -15,7 +15,7 @@ ccs.GroupsViewModel = function() {
             c.NetworkSettings = {PublicIpAddress: '--', IpAddress: '--'};
             console.log('TODO: Created, IpAddress, PublicIpAddress, Status not part of response');
             if (c.Creation_time) {
-                c.Creation_time = Date.parse(c.Creation_time);
+                c.Creation_time = (new Date(c.Creation_time)).getTime() / 1000;
             }
             else
                 c.Creation_time = 0;

@@ -2,7 +2,16 @@
 
   <div class="main-content panel panel-default">
       <div class="panel-heading">
-        <h4 data-bind="text: name"></h4>
+        <div class="panel-title with-buttons">
+          <span data-bind="text: name"></span>
+          <div class="pull-right" data-bind="foreach: allowedActions">
+            <!-- ko if: enable -->
+            <button class="btn btn-info btn-sm" data-bind="click: method">
+              <span class="text-uppercase" data-bind="text: text + ' GROUP'"></span>
+            </button>
+            <!-- /ko -->
+          </div>
+        </div>
       </div>
       <div class="panel-body">
         <div class="row">
@@ -15,11 +24,6 @@
 
             <div id="containerState" class="container-state">
               <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container group is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
-              <div style="margin: 1.5em 0;" data-bind="foreach: allowedActions">
-                <!-- ko if: enable -->
-                <button class="btn btn-primary btn-sm" data-bind="click: method" style="border: 2px solid grey; margin-right: 10px; margin-bottom: 10px;"><span class="text-uppercase" data-bind="text: text"></span></button>
-                <!-- /ko -->
-              </div>
             </div>
           </div>
         </div>
