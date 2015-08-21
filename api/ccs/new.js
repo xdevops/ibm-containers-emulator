@@ -4,8 +4,6 @@ ccs.NewViewModel = function() {
     var self = this;
     self.visible = ko.observable(false);
 
-    self.registryURL = ko.observable(); //ccs.endpoint + '/v2/containers/images';
-
     self.step2 = ko.observable(false); // wizard page
     self.next = function() {
         self.step2(true);
@@ -120,40 +118,37 @@ ccs.NewViewModel = function() {
         var localRepoCallback = function(data) {
             self.launchData.images.removeAll();
             data.forEach(function(image) {
-                //
-                // parsing image name for registry (has to begin with 'registry-ice')
-                // and namespace (format: registry/namespace/name:tag)
-                // ignore images without registry
-                //
-                if (image.Image.toLowerCase().indexOf('<none>') == -1) {
-                    var image_segments = image.Image.split('/');
-                    var reg = image_segments.shift();
-                    if (reg.indexOf("registry-ice") !== -1) {
-                        if (image_segments.length > 2) {
-                            var namespace = image_segments[0];
-                            self.registryURL(reg + '/' + namespace);
-                        }
-                        else
-                            self.registryURL(reg);
+                // parse image name. Format: registry/namespace/name:tag
+                // skip images without an image name
+                // use '--' as placeholder for no registry or namespace
+                // ignore images with 'xdevops' in image name
+                if (!image.Image || image.Image.toLowerCase().indexOf('<none>') !== -1)
+                    return;
 
-                        image.Name = image_segments.join('/')
-                        image.Tag = '';
-                        var name_tag = image.Name.split(':');
-                        if (name_tag[1]) {
-                            image.Name = name_tag[0];
-                            image.Tag =  name_tag[1];
-                        }
-
-                        //var d = new Date(image.Created);
-                        //image.Created = d.getTime() / 1000;
-                        if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
-                            image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
-                        else
-                            image.VirtualSize = '--';
-
-                        self.launchData.images.push(image);
-                    }
+                var image_segments = image.Image.split('/');
+                var reg = namespace = name = name_tag = tag = '--';
+                if (image_segments.length === 3) {
+                    reg = image_segments.shift();
                 }
+                if (image_segments.length >= 2) {
+                    namespace = image_segments.shift();
+                }
+                name_tag = image_segments.shift().split(':');
+                name = name_tag[0];
+                tag = name_tag.length === 2 ? name_tag[1] : '--';
+
+                image.Registry = reg;
+                image.Name = namespace === '--' ? name : namespace + '/' + name;
+                image.Tag = tag;
+
+                //var d = new Date(image.Created);
+                //image.Created = d.getTime() / 1000;
+                if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
+                    image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
+                else
+                    image.VirtualSize = '--';
+
+                self.launchData.images.push(image);
             });
 
             $("body").css("cursor", "default");
