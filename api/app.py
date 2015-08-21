@@ -79,11 +79,13 @@ def get_response_text(status_code, response_json, resource_type):
 
     resource_url = request.url.split('?')[0]
     best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
-    if best == 'application/json' or status_code != 200:
+    if status_code != 200:
         return response_json, status_code
+    elif best == 'application/json':
+        return response_json, status_code, {'Content-Type': 'application/json'}
     else:
         ace_config = parse_ace_config()
-        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type, resource_url=resource_url, auth_token = auth_token, ace_config = ace_config), status_code
+        return Template(HTML_TEMPLATE).substitute(app_name=APP_NAME, json=response_json, resource_type=resource_type, resource_url=resource_url, auth_token = auth_token, ace_config = ace_config)
 
 def get_docker_url():
     path = request.full_path[:-1] if request.full_path[-1] == '?' else request.full_path
@@ -170,9 +172,12 @@ def fixup_images_response(images_json):
         app.logger.warn("in fixup_images_response converting {0}".format(image))
 
         if 'Image' not in image:
-            for tag in image["RepoTags"]:
+            tags = image.get("RepoTags")
+            if tags:
+                tag = tags[0] # use first tag for the image name
                 if tag.find("<none>") == -1:
-                    result_json.append({"Image": tag, "Created": image["Created"], "Id": image["Id"], "VirtualSize": image["VirtualSize"]})
+                    image["Image"] = tag[:tag.index(':')]
+        result_json.append(image)
 
     return 200, result_json
 
@@ -405,9 +410,9 @@ def register_image(v):
     return r.text, r.status_code
 
 """
-## GET /{version}/containers/images/json
+## GET /{version}/images/json
 """
-@app.route('/<v>/containers/images/json', methods=['GET'])
+@app.route('/<v>/images/json', methods=['GET'])
 #@token_required
 def get_images(v):
     # TODO Something is wrong, I am only seeing two images in the response

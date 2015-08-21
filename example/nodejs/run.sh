@@ -3,7 +3,7 @@
 
 CCSAPI="http://localhost:5000/v3"
 
-HELLO_IMAGE="hello:v1"
+HELLO_IMAGE="hello:v2"
 HELLO_ROUTE="localhost:6001"
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )

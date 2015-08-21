@@ -49,7 +49,7 @@ ccs.NewViewModel = function() {
         volumes: ko.observableArray(),
         availableVolumes: ko.observableArray(),
         dockerRepos: ko.observableArray([
-            {name: 'Your Image Registry', url: window.location.origin + '/v2/containers/images/json'}
+            {name: 'Your Image Registry', url: window.location.origin + '/v2/images/json'}
         ]),
         selectedRepo: ko.observable(),
         selectedBluemixApp: ko.observable(),
