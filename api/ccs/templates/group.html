@@ -2,45 +2,41 @@
 
   <div class="main-content panel panel-default">
       <div class="panel-heading">
-        <div class="panel-title with-buttons">
-          <span data-bind="text: name"></span>
-          <div class="pull-right" data-bind="foreach: allowedActions">
-            <!-- ko if: enable -->
-            <button class="btn btn-info btn-sm" data-bind="click: method">
-              <span class="text-uppercase" data-bind="text: text + ' GROUP'"></span>
-            </button>
+
+        <form class="form-inline">
+          <div class="form-group">
+              <span class="navbar-brand">
+                <span data-bind="text: name"></span>
+                <small>(<em>Image: <span data-bind="text: image"></span></em>)</small>
+              </span>
+          </div>
+          <div class="form-group">
+            <span class="navbar-brand">Instances:</span>
+          </div>
+
+          <div class="form-group">
+            <input type="number" class="form-control" data-bind="value: numContainers">
+          </div>
+          <button class="btn btn-primary" data-bind="click: updateInstances">Save</button>
+
+          <div class="pull-right navbar-brand" style="margin-top: -5px;">
+            <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container group is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
+
+            <!--  ko foreach: allowedActions -->
+              <!-- ko if: enable -->
+              <button class="btn btn-primary btn-sm" style="border: 2px solid grey; margin-left: 5px; margin-bottom: 10px;" data-bind="click: method">
+                <span class="text-uppercase" data-bind="text: text + ' GROUP'"></span>
+              </button>
+              <!-- /ko -->
             <!-- /ko -->
           </div>
-        </div>
+
+        </form>
       </div>
+
       <div class="panel-body">
-        <div class="row">
-          <div class="col-md-5">
-            <p>
-              <span><em>Image: <span data-bind="text: image"></span></em></span> | <span>Routes: --</span> | <span>Ports: --</span> | <span>Volumes: --</span> | Size: <span>m1.tiny</span>
-              </p>
-
-            </p>
-
-            <div id="containerState" class="container-state">
-              <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container group is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-md-12">
-            <form role="form" class="form-inline">
-                <div class="form-group">
-                  <label for="groupNumContainers" class="sr-only">Instances:</label>
-                  <div class="input-group">
-                    <div class="input-group-addon">Instances:</div>
-                    <input type="number" id="groupNumContainers" class="form-control pad-left-10 input-big-number" data-bind="value: numContainers">
-                  </div>
-                </div>
-                <button class="btn btn-primary" data-bind="click: updateInstances">Save</button>
-            </form>
-          </div>
+        <div class="panel-title bg-error">
+          <span>Routes: --</span> | <span>Ports: --</span> | <span>Volumes: --</span> | Size: <span>m1.tiny</span>
         </div>
 
         <div class="row" style="margin-top: 20px;">

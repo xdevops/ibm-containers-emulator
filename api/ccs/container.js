@@ -13,28 +13,7 @@ ccs.ContainerViewModel = function() {
     self.publicIP = ko.observable();
     self.privateIP = ko.observable();
     self.created = ko.observable();
-
-    self.showDetails = ko.observable(true);
-    self.navEntries = ko.observableArray();
-
-    self.navClick = function(nav) {
-        function callback(data) {
-            self.showDetails(false);
-            if (!data) data = "<h4>Error retrieving monitoring &amp; log data</h4>";
-            $("#containerMonitoring").replaceWith(data);
-        };
-
-        self.navEntries().forEach(function(entry) {
-            entry({id: entry().id, label: entry().label, selected: !entry().selected});
-        });
-
-        if (nav.id == 'monitoring') {
-            ccs.getMonitoringBody(self.jso.Id, 'container', self.jso._subject, callback);
-        }
-        else {
-            self.showDetails(true);
-        }
-    };
+    self.ports = ko.observable();
 
     /*
     FROM MOCK_CCSAPI python source:
@@ -188,30 +167,22 @@ ccs.ContainerViewModel = function() {
         return actions;
     });
 
-    self.monitor = new ccs.Monitor();
-
     self.init = function(jso) {
         console.log(jso);
 
         self.jso = jso;
         self.name(jso.Name.replace('/',''));
 
-        var cpu_shares = jso.Config.CpuShares;
+        var cpu_shares = jso.HostConfig.CpuShares;
         if (cpu_shares == 0) cpu_shares = self.DOCKER_MAXSHARES;
         var cpu_percent = (100 * cpu_shares / self.DOCKER_MAXSHARES).toPrecision(3);
 
         self.cpu(cpu_percent);
-        self.memory(jso.Config.Memory);
+        self.memory(jso.HostConfig.Memory);
         self.image(jso.Config.Image);
         self.privateIP(jso.NetworkSettings.IpAddress);
+        self.ports(Object.keys(jso.NetworkSettings.Ports).join())
         self.publicIP('--');
         self.created(jso.Created);
-
-        self.monitor.init(self.jso.Id);
-
-        self.navEntries([
-            ko.observable({id: 'overview', label: 'Overview', url: jso._subject, selected: true}),
-            ko.observable({id: 'monitoring', label: 'Monitoring and Logs', url: '/', selected: false})
-        ]);
     };
 }

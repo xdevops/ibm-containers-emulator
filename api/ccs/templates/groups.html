@@ -1,18 +1,5 @@
 <div class="content-wrapper" id="page-groups" data-bind="if: visible ">
 
-    <div class="bmx-contextual-nav">
-       <div class="bmx-nav-title text-uppercase field-ellipsis" data-bind="text: name"></div>
-       <ul data-bind="foreach: navEntries">
-          <li class="left-nav-item" data-bind="css: {active: selected}">
-             <a class="left-nav-link" data-bind="text: label, click: $parent.navClick"></a>
-             <!-- ko if: selected -->
-             <span class="pull-right">></span>
-             <!-- /ko -->
-          </li>
-       </ul>
-    </div>
-
-
     <div class="main-content panel panel-bmx">
       <div class="panel-heading panel-bmx-heading">
         <a href="" data-bind="click: gotoLaunchWizard"><h4><span class="fa fa-lg fa-plus"></span><span class="pad-left-10">Create Group</span></h4></a>

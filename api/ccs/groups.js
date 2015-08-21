@@ -4,27 +4,54 @@ ccs.GroupsViewModel = function() {
     var self = this;
     self.visible = ko.observable(false);
     self.groups = ko.observableArray();
-    self.navEntries = ko.observableArray();
+    self.url = null;
 
-    self.init = function(jso) {
-        console.log(jso);
-        self.groups.removeAll();
+    function makeURL(group) { return '/v2/containers/groups/' + group.Id; }
+    function processJSO(jso) {
         jso.forEach(function(c) {
             c.url = '/v2/containers/groups/' + c.Id;
-            //if (c.NetworkSettings.PublicIpAddress == '') c.NetworkSettings.PublicIpAddress = '--';
             c.NetworkSettings = {PublicIpAddress: '--', IpAddress: '--'};
-            console.log('TODO: Created, IpAddress, PublicIpAddress, Status not part of response');
             if (c.Creation_time) {
-                c.Creation_time = (new Date(c.Creation_time)).getTime() / 1000;
+                c.Creation_time = Math.floor((new Date(c.Creation_time)).getTime() / 1000);
             }
             else
                 c.Creation_time = 0;
             if (!c.Port) c.Port = '--';
             if (!c.Status) c.Status = '--';
             if (!c.Image) c.Image = '--';
-
         });
+        return jso;
+    }
+
+    self.getGroups = function() {
+        $.ajax({
+            type: 'GET',
+            url: '/v2/containers/groups',
+            headers: {
+                "Accept":"application/json",
+                "X-Auth-Token": $context.auth_token
+            }
+        }).done(function(data, textStatus, xhr) {
+            var groups = processJSO(JSON.parse(data));
+            self.groups(groups);
+        });
+    };
+
+    self.init = function(jso) {
+        console.log(jso);
+        self.url = jso._subject;
+        self.groups.removeAll();
+        jso = processJSO(jso);
         self.groups(jso);
+
+        //Clear update interval if it exist
+        if (self.updateInterval) clearInterval(self.updateInterval);
+
+        //Setup new update loop with current target
+        self.updateInterval = setInterval(function(){
+            self.getGroups();
+        }, 5000);
+
     };
 
     self.gotoLaunchWizard = function() {

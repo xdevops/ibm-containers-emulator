@@ -313,4 +313,10 @@ p.mChartDesc{
   color: #93a2aa;
 }
 
+@media (min-width: 768px) {
+  .form-control .form-inline .width-5 {
+    width: 5em;
+  }
+}
+
 

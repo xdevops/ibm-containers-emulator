@@ -1,69 +1,51 @@
 <div class="content-wrapper" id="page-container" data-bind="if: visible">
 
-  <div class="main-content panel panel-bmx">
-
-    <div data-bind="if: showDetails">
-      <div class="panel-heading panel-bmx-heading">
-        <div class="row">
-          <div class="col-md-1"><image src="/ccs/css/images/container-64x64.jpg"></div>
-          <div class="col-md-3">
-            <h1><span data-bind="text: name"></h1>
-          </div>
+  <div class="main-content panel panel-default">
+    <div class="panel-heading ">
+        <div class="panel-title" style="font-size: 19px;">
+          <span data-bind="text: name"></span>
+          (Image: <em><span data-bind="text: image"></span></em>)
+          <span class="pull-right" style="margin-top: -5px;">
+            <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span>
+            <span class="pad-left-5">Your container is <span class="text-lowercase" data-bind="text: stateInfo().state"></span></span>
+            <!-- ko foreach: allowedActions -->
+              <!-- ko if: enable -->
+              <button class="btn btn-primary btn-sm" data-bind="click: method" style="border: 2px solid grey; margin-left: 5px; margin-bottom: 10px;"><span class="text-uppercase" data-bind="text: text"></span></button>
+              <!-- /ko -->
+            <!-- /ko -->
+          </span>
         </div>
-      </div>
-      <div class="panel-body">
-          <div class="row deployment-row">
-            <!-- container info widget -->
-            <div class="col-md-12">
-              <!-- basic info -->
-              <div class="col-md-2 bg-container container-info">
-                <img class="center-block container-image" src="/ccs/css/images/container-64x64.jpg" alt="container icon">
-                <p class="text-center">
-                  <strong><span class="text-uppercase" data-bind="text: name"></span></strong><br>
-                  Public IP: <span data-bind="text:publicIP"></span><br>
-                  Private IP: <span data-bind="text:privateIP"></span>
-                </p>
-              </div>
-              <!-- basic container stats -->
-              <div class="col-md-2 bg-highlight container-info">
-                <form role="form" style="margin-top: 20px;">
-                  <div class="form-group">
-                    <label for="containerTotalCPU" class="container-label">TOTAL CPU</label>
-                    <p class="big-number" id="containerTotalCPU"><span data-bind="text: cpu"></span> %</p>
-                  </div>
 
-                  <div class="form-group">
-                    <label for="containerTotalMemory" class="container-label">TOTAL MEMORY</label>
-                    <p class="big-number" id="containerTotalMemory">
-                      <span data-bind="text: memory"></span>
-                      <span>GB</span>
-                    </p>
-                  </div>
-                </form>
-              </div>
+    </div>
 
-              <div class="col-md-3 container-info bg-primary">
-                <h5>Container Health</h5>
-                <form role="form">
-                  <div class="form-group">
-                    <p id="containerState" class="container-state">
-                      <span data-bind="css: stateInfo().icon, style: {color: stateInfo().style}"></span> Your container is <span class="text-lowercase" data-bind="text: stateInfo().state"></span>
-                    </p>
-                      <div style="margin: 1.5em 0;"data-bind="foreach: allowedActions">
-                        <!-- ko if: enable -->
-                        <button class="btn btn-primary btn-sm" data-bind="click: method" style="border: 2px solid grey; margin-right: 10px; margin-bottom: 10px;"><span class="text-uppercase" data-bind="text: text"></span></button>
-                        <!-- /ko -->
-                      </div>
-                  </div>
-                </form>
-              </div>
+    <div class="panel-body">
+        <div class="panel-title bg-error">
+          Public IP: <span data-bind="text:publicIP"></span> | Private IP: <span data-bind="text:privateIP"></span> | Ports: <span data-bind="text: ports"></span>
+        </div>
+
+        <div class="row" style="margin-top: 20px;">
+          <div class="col-md-12">
+            <div class="col-md-2">
+              <label for="containerTotalCPU" class="container-label text-uppercase">total CPU</label>
+              <p id="containerTotalCPU" class="big-number"><span data-bind="text: cpu"></span> %</p>
+            </div>
+
+            <div class="col-md-2">
+              <label for="containerTotalMemory" class="container-label text-uppercase">total memory</label>
+              <p class="big-number" id="containerTotalMemory">
+                <span data-bind="text: memory"></span>
+                <span>MB</span>
+              </p>
+            </div>
+
+            <div class="col-md-2">
+              <label for="deploymentTraffic" class="container-label text-uppercase">total disk</label>
+              <p class="big-number" id="containerState">
+                <span data-bind="">-- MB</span>
+              </p>
             </div>
           </div>
-          <hr>
-      </div>
+        </div>
     </div>
-
-    <div data-bind="ifnot: showDetails">
-      <div id="containerMonitoring">INSERT MONITORING BODY HERE</div>
-    </div>
+  </div>
 </div>
