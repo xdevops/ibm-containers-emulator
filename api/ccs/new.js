@@ -118,6 +118,8 @@ ccs.NewViewModel = function() {
         var localRepoCallback = function(data) {
             self.launchData.images.removeAll();
             data.forEach(function(image) {
+                console.log(image);
+
                 // parse image name. Format: registry/namespace/name:tag
                 // skip images without an image name
                 // use '--' as placeholder for no registry or namespace
@@ -133,6 +135,10 @@ ccs.NewViewModel = function() {
                 if (image_segments.length >= 2) {
                     namespace = image_segments.shift();
                 }
+
+                if (namespace == 'xdevops')
+                    return;
+
                 name_tag = image_segments.shift().split(':');
                 name = name_tag[0];
                 tag = name_tag.length === 2 ? name_tag[1] : '--';
@@ -141,8 +147,6 @@ ccs.NewViewModel = function() {
                 image.Name = namespace === '--' ? name : namespace + '/' + name;
                 image.Tag = tag;
 
-                //var d = new Date(image.Created);
-                //image.Created = d.getTime() / 1000;
                 if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
                     image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
                 else

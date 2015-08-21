@@ -31,18 +31,18 @@
                 <table class="table table-striped" data-toggle="table" data-height="8">
                   <thead>
                     <tr class="bg-primary">
-                      <td class="col-sm-3">Name</td>
+                      <td class="col-sm-2">Name</td>
                       <td class="col-sm-1">Tag</td>
-                      <td class="col-sm-4">ID</td>
-                      <td class="">Created</td>
-                      <td class="">Virtual Size</td>
+                      <td class="col-sm-1">ID</td>
+                      <td class="col-sm-1">Created</td>
+                      <td class="col-sm-1">Virtual Size</td>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: filteredImages">
                     <tr>
                       <td class="field-ellipsis"><a data-bind="text: Name, click: $parent.setImage, tooltip: {title: Name}"></a></td>
-                      <td class="field-ellipsis"  style="width: 10%;" data-bind="text: Tag"></td>
-                      <td class="field-ellipsis" data-bind="text: Id"></td>
+                      <td class="field-ellipsis" data-bind="text: Tag"></td>
+                      <td class="field-ellipsis clip-5" data-bind="text: Id"></td>
                       <td class="field-ellipsis" data-bind="text: ccs.createdText(Created)"></td>
                       <td class="field-ellipsis"><span data-bind="text: VirtualSize"></span> MB</td>
                     </tr>

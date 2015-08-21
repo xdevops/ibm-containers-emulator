@@ -195,6 +195,16 @@ th.id-col, td.id-col {
     max-width: 20em;
 }
 
+.clip-5 {
+  max-width: 5em;
+  display: block;
+}
+
+.clip-20 {
+  max-width: 20em;
+  display: block;
+}
+
 .scrollable-div {
     height: 325px;
     margin-bottom: 0;

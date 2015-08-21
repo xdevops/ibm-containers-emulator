@@ -172,7 +172,7 @@ def fixup_images_response(images_json):
         if 'Image' not in image:
             for tag in image["RepoTags"]:
                 if tag.find("<none>") == -1:
-                    result_json.append({"Image": tag, "Created": image["Created"], "Id": image["Id"]})
+                    result_json.append({"Image": tag, "Created": image["Created"], "Id": image["Id"], "VirtualSize": image["VirtualSize"]})
 
     return 200, result_json
 
