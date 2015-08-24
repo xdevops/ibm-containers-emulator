@@ -32,7 +32,7 @@ ccs.GroupsViewModel = function() {
                 "X-Auth-Token": $context.auth_token
             }
         }).done(function(data, textStatus, xhr) {
-            var groups = processJSO(JSON.parse(data));
+            var groups = processJSO(data);
             self.groups(groups);
         });
     };

@@ -24,7 +24,7 @@ ccs.ContainersViewModel = function() {
                 "X-Auth-Token": $context.auth_token
             }
         }).done(function(data, textStatus, xhr) {
-            var containers = JSON.parse(data);
+            var containers = data;
             containers.forEach(function(c) {
                 c.url = '/v2/containers/' + c.Id + '/json';
                 if (c.NetworkSettings.PublicIpAddress == '') c.NetworkSettings.PublicIpAddress = '--';
