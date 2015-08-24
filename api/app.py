@@ -174,9 +174,9 @@ def fixup_images_response(images_json):
         if 'Image' not in image:
             tags = image.get("RepoTags")
             if tags:
-                tag = tags[0] # use first tag for the image name
+                tag = tags[0] # use first tag for the "Image" field?
                 if tag.find("<none>") == -1:
-                    image["Image"] = tag[:tag.index(':')]
+                    image["Image"] = tag
         result_json.append(image)
 
     return 200, result_json

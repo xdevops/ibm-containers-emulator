@@ -1,6 +1,6 @@
 # IBM Containers Emulator
 
-IBM (Bluemix) Containers Emulator wraps the [Docker API](https://docs.docker.com/reference/api/docker_remote_api/) and implements a subset of the actual [IBM Containers API](https://www.ng.bluemix.net/docs/containers/container_index.html), so that you can deploy and test your containers in a local Docker environment before running them on Bluemix. Specifically, it provides an emulation of the APIs in [Containers](http://ccsapi-doc.mybluemix.net/#!/Containers) and [Container Groups](http://ccsapi-doc.mybluemix.net/#!/Container_Groups).
+IBM (Bluemix) Containers Emulator wraps the [Docker API](https://docs.docker.com/reference/api/docker_remote_api/) and implements a subset of the actual [IBM Containers API](https://www.ng.bluemix.net/docs/containers/container_index.html), so that you can deploy and test your containers in a local Docker environment before running them on Bluemix. Specifically, it provides an emulation of the APIs in [Containers](http://ccsapi-doc.mybluemix.net/#!/Containers), [Container Groups](http://ccsapi-doc.mybluemix.net/#!/Container_Groups), and *GET /images/json* in [Images](http://ccsapi-doc.mybluemix.net/#!/Images).
 
 Using the emulator you can create container groups and map them to load-balanced routes, just as you would on Bluemix, only the underlying Docker containers will be running in your local docker environment and the mapped routes will be managed by a local HAProxy load balancer. 
 
