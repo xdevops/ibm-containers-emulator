@@ -49,9 +49,9 @@ At this point, boot2docker will suggest new environment settings for `docker` it
     
 ## Try the Example
 
-There is a simple Hello World example in the *example* directory that you can run to get a better idea of what the emulator is actually doing. In that directory you'll see a very simple Dockerfile for the application, which is a trivial python web server that will simply respond with the message: ```Hello from container: <container_id>```.
+There is a simple Hello World example in the *examples* directory that you can run to get a better idea of what the emulator is actually doing. There are 2 versions of the example program, one written in Python and the other in JavaScript. Take your pick. 
 
-There's also a *run.sh* script that demonstrates how we run the hello example application as a Container Group mapped to the route *localhost:6001*. You can see from the *"NumberInstances"* field in the script that it starts the group with 2 instances:
+In both sub-directories you'll see a very simple Dockerfile for the application, which is a trivial web server that will simply respond with the message: ```Hello from container: <container_id>```. There's also a *run.sh* script that demonstrates how we run the hello example application as a Container Group mapped to the route *localhost:6001*. You can see from the *"NumberInstances"* field in the script that it starts the group with 2 instances:
 ```bash
 read -d '' hello << EOF
 {
