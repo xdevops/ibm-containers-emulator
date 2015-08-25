@@ -33,7 +33,8 @@ def get_group_instances(group, get_all=True):
     response = []
     if instances:
         for instance in instances:
-            if "Names" in instance and len(instance["Names"]) and instance["Names"][0].startswith(name_prefix):
+            names = instance.get("Names")
+            if names and names[0].startswith(name_prefix):
                 response.append(instance)
     return response
       
