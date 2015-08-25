@@ -118,41 +118,20 @@ ccs.NewViewModel = function() {
         var localRepoCallback = function(data) {
             self.launchData.images.removeAll();
             data.forEach(function(image) {
-                console.log(image);
+                var image = image;
+                image.RepoTags.forEach(function(r) {
+                    if (r.indexOf('<none>') !== -1) return; // filter no-name images
 
-                // parse image name. Format: registry/namespace/name:tag
-                // skip images without an image name
-                // use '--' as placeholder for no registry or namespace
-                // ignore images with 'xdevops' in image name
-                if (!image.Image || image.Image.toLowerCase().indexOf('<none>') !== -1)
-                    return;
-
-                var image_segments = image.Image.split('/');
-                var reg = namespace = name = name_tag = tag = '--';
-                if (image_segments.length === 3) {
-                    reg = image_segments.shift();
-                }
-                if (image_segments.length >= 2) {
-                    namespace = image_segments.shift();
-                }
-
-                if (namespace == 'xdevops')
-                    return;
-
-                name_tag = image_segments.shift().split(':');
-                name = name_tag[0];
-                tag = name_tag.length === 2 ? name_tag[1] : '--';
-
-                image.Registry = reg;
-                image.Name = namespace === '--' ? name : namespace + '/' + name;
-                image.Tag = tag;
-
-                if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
-                    image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
-                else
-                    image.VirtualSize = '--';
-
-                self.launchData.images.push(image);
+                    var name = r.split(':');
+                    if (image.VirtualSize && image.VirtualSize > 1024 * 1024)
+                        image.VirtualSize = (image.VirtualSize/1024/1024).toFixed(0);
+                    else
+                        image.VirtualSize = '--';
+                    image.Name = name[0] || '';
+                    image.Tag =  name[1] || '';
+                    self.launchData.images.push(image);
+                    console.log(image);
+                });
             });
 
             $("body").css("cursor", "default");
