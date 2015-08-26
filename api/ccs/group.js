@@ -165,7 +165,7 @@ ccs.GroupViewModel = function() {
         self.numContainers(jso.NumberInstances.Desired); // this isn't necessarily the number of containers if they are spinning up - but otherwise would have to do calls to retrieve containers list filtered by group and then count.
         self.status('ACTIVE'); // TODO - this has to be computed
         self.port = jso.Port;
-        self.route(jso.Routes ? jso.Routes[0] : '--'); // TODO what to do in case we have more than one Route?
+        self.route(jso.Routes ? jso.Routes.join(', ') : '--'); // TODO what to do in case we have more than one Route?
         self.volumes([]); // TODO this has to be retrieved
 
         self.getContainers();
