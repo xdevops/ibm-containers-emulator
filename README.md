@@ -49,7 +49,7 @@ At this point, boot2docker will suggest new environment settings for `docker` it
     
 ## Try the Example
 
-There is a simple Hello World example in the *examples* directory that you can run to get a better idea of what the emulator is actually doing. There are 2 versions of the example program, one written in Python and the other in JavaScript. Take your pick. 
+There is a simple Hello World example in the *examples* directory that you can run to get a better idea of what the emulator is actually doing. There are 2 sub-directories containing 2 versions of the example program, one written in Python and the other in JavaScript. Take your pick. 
 
 In both sub-directories you'll see a very simple Dockerfile for the application, which is a trivial web server that will simply respond with the message: ```Hello from container: <container_id>```. There's also a *run.sh* script that demonstrates how we run the hello example application as a Container Group mapped to the route *localhost:6001*. You can see from the *"NumberInstances"* field in the script that it starts the group with 2 instances:
 ```bash
@@ -67,7 +67,7 @@ echo "created hello example group: $HELLO_ID"
 ```
 When you run the script you should see output something like this:
 ```bash
-$ cd example
+$ cd examples/python
 $ ./run.sh
 ... bunch of output ...
 Successfully built 1795d7c78136
@@ -86,12 +86,12 @@ cd76c5ff9b0e        xdevops/ccs-emulator:latest   "/ccs-emulator/run-s   23 hour
 As mentioned above, the script maps the container group to the route *localhost:6001*, so if you curl, or point your browser at, http://localhost:6001/ you should see a message something like this:
 ```
 $ curl http://localhost:6001/
-Hello from container: 364c56ed7138
+Hello from container: bc59296f1fc4
 ```
 If you do it again, you should get a response from the second container:
 ```
 $ curl http://localhost:6001/
-Hello from container: 0368617b9019
+Hello from container: 81c2c37c6eb5
 ```
 As you repeat the above curl request, over and over, you will get alternating responses from the groups containers (2 in this case) as the load balancer forwards requests to the containers using a default round-robin algorithm.
 
