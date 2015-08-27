@@ -62,7 +62,7 @@ ccs.ContainersViewModel = function() {
         }).done(function(data, textStatus, xhr) {
             function makeURL(group) { return ccs.endpoint + '/v2/containers/groups/' + group.Id; }
 
-            var groups = JSON.parse(data);
+            var groups = data;
             groups.forEach(function(group) {
                 self.groups.push({
                     Name: group.Name,
