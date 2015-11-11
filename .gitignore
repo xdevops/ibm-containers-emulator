@@ -9,3 +9,5 @@ build
 .idea
 *.log
 api/bindings.json
+.vagrant/*
+

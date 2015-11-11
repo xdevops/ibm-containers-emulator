@@ -2,11 +2,19 @@
 
 IBM (Bluemix) Containers Emulator wraps the [Docker API](https://docs.docker.com/reference/api/docker_remote_api/) and implements a subset of the actual [IBM Containers API](https://www.ng.bluemix.net/docs/containers/container_index.html), so that you can deploy and test your containers in a local Docker environment before running them on Bluemix. Specifically, it provides an emulation of the APIs in [Containers](http://ccsapi-doc.mybluemix.net/#!/Containers), [Container Groups](http://ccsapi-doc.mybluemix.net/#!/Container_Groups), and *GET /images/json* in [Images](http://ccsapi-doc.mybluemix.net/#!/Images).
 
-Using the emulator you can create container groups and map them to load-balanced routes, just as you would on Bluemix, only the underlying Docker containers will be running in your local docker environment and the mapped routes will be managed by a local HAProxy load balancer. 
+Using the emulator you can create container groups and map them to load-balanced routes, just as you would on Bluemix, only the underlying Docker containers will be running in your local docker environment and the mapped routes will be managed by a local HAProxy load balancer.
 
 ## Getting Started
 
+### For Linux users
+
 To get started all you need is Docker running on your machine. The emulator, itself, runs in a docker container in the same docker environment that it will use to implement the API.
+
+### For OSX / Windows users
+
+To get started we recommend you use the Vagrantfile provided in this repository and start up a virtual machine that hosts the docker environment. We haven't had good luck with the needed port mappings using docker-machine and the other version 1.9 Docker Toolbox tools.
+
+### For all users
 
 Start by cloning this project:
 ```
@@ -23,33 +31,13 @@ $ docker ps
 CONTAINER ID        IMAGE                         COMMAND                CREATED             STATUS              PORTS                                                      NAMES
 cd76c5ff9b0e        xdevops/ccs-emulator:latest   "/ccs-emulator/run-s   23 hours ago        Up 23 hours         0.0.0.0:5000->5000/tcp, 0.0.0.0:6001-6009->6001-6009/tcp   ccs-emulator
 ```
-As you can see, the container exposes ports 5000 and 6001-6009. Port 5000 is the emulator API endpoint. Ports 6001-6009 are used for mapped routes. (Note that the emulator only supports localhost:6001 to localhost:6009 for the maproute API. Any other host/domain values will return an error.) 
+As you can see, the container exposes ports 5000 and 6001-6009. Port 5000 is the emulator API endpoint. Ports 6001-6009 are used for mapped routes. (Note that the emulator only supports localhost:6001 to localhost:6009 for the maproute API. Any other host/domain values will return an error.)
 
 You can now access the Container API at http://localhost:5000/v3. For example, to list container groups you can curl http://localhost:5000/v3/containers/groups, as described in [Container Groups](http://ccsapi-doc.mybluemix.net/#!/Container_Groups).
 
-### Configuring for *boot2docker*
-
-IBM Containers emulator only speaks HTTP, not HTTPS, so it is important that Docker be exposed via HTTP. To do this with [boot2docker](http://boot2docker.io):
-```
-boot2docker ssh
-sudo su
-vi /var/lib/boot2docker/profile
-```
-The file may not exist, if so it is fine as long as we add :
-```
-DOCKER_TLS=no
-DOCKER_HOST:='-H tcp://0.0.0.0:2375'
-```
-and then restart boot2docker:
-```
-boot2docker halt
-boot2docker up
-```
-At this point, boot2docker will suggest new environment settings for `docker` itself.
-    
 ## Try the Example
 
-There is a simple Hello World example in the *examples* directory that you can run to get a better idea of what the emulator is actually doing. There are 2 sub-directories containing 2 versions of the example program, one written in Python and the other in JavaScript. Take your pick. 
+There is a simple Hello World example in the *examples* directory that you can run to get a better idea of what the emulator is actually doing. There are 2 sub-directories containing 2 versions of the example program, one written in Python and the other in JavaScript. Take your pick.
 
 In both sub-directories you'll see a very simple Dockerfile for the application, which is a trivial web server that will simply respond with the message: ```Hello from container: <container_id>```. There's also a *run.sh* script that demonstrates how we run the hello example application as a Container Group mapped to the route *localhost:6001*. You can see from the *"NumberInstances"* field in the script that it starts the group with 2 instances:
 ```bash
@@ -127,7 +115,7 @@ Use the [ice](https://github.rtp.raleigh.ibm.com/project-alchemy/ccscli) CLI to 
 ```bash
 ice login --host http://localhost:5000 --key `whoami`-token
 # `whoami`-token just generates a dummy, which ice needs and is helpful for logging and simulating multi-user function.
-```  
+```
 At this point, you can invoke ice commands which will operate against your local Docker environment.
 ```
 ice ps
