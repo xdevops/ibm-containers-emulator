@@ -94,6 +94,12 @@ def get_docker_url():
         docker_path = '/'.join(path_segments[3:])   # /<v>/containers/images/xxx -> /containers/images/xxx
     else:
         docker_path = '/'.join(path_segments[2:]) # /<v>/containers/xxx -> /containers/xxx
+
+    print ">>>>"
+    print ">>>>"
+    print 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
+    print ">>>>"
+    print ">>>>"
     return 'http://%s/%s' % (DOCKER_REMOTE_HOST, docker_path)
 
 def get_container_state(container_json):
@@ -321,6 +327,23 @@ def show_container_info(v,id):
     status_code, response_json = fixup_container_info_response(container) if r.status_code == 200 else (r.status_code, r.text)
     # (get_response_text returns a tuple)
     return get_response_text(status_code, json.dumps(response_json), 'container')
+
+"""
+## GET /{version}/containers/{id}/stats
+"""
+@app.route('/<v>/containers/<id>/stats', methods=['GET'])
+def show_container_stats(v, id):
+    r = requests.get(get_docker_url(), params={'stream': 'false'}, headers={'Accept': 'application/json'})
+
+    if r.status_code != 200:
+        app.logger.warn("show_container_stats for {2} -- Docker returned {0}: {1}".format(r.status_code, r.text, id))
+        return r.text, r.status_code
+
+    response_json = r.json()
+    status_code = r.status_code
+    # (get_response_text returns a tuple)
+    return get_response_text(status_code, json.dumps(response_json), 'container')
+
 
 """
 ## POST /{version}/containers/{id}/start

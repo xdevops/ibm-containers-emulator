@@ -177,11 +177,16 @@ ccs.ContainerViewModel = function() {
         if (cpu_shares == 0) cpu_shares = self.DOCKER_MAXSHARES;
         var cpu_percent = (100 * cpu_shares / self.DOCKER_MAXSHARES).toPrecision(3);
 
+        var ports = [];
+        Object.keys(jso.NetworkSettings.Ports).forEach(function(port) {
+            ports.push(port.replace("/tcp", ""));
+        });
+
         self.cpu(cpu_percent);
         self.memory(jso.HostConfig.Memory);
         self.image(jso.Config.Image);
         self.privateIP(jso.NetworkSettings.IpAddress);
-        self.ports(Object.keys(jso.NetworkSettings.Ports).join())
+        self.ports(ports.join());
         self.publicIP('--');
         self.created(jso.Created);
     };
