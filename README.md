@@ -18,12 +18,19 @@ To get started we recommend you use the Vagrantfile provided in this repository 
 
 Start by cloning this project:
 ```
-git clone git@github.rtp.raleigh.ibm.com:frankb-ca/mock_ccsapi.git
+git clone https://github.com/xdevops/ibm-containers-emulator.git
 ```
 The *startup.sh* bash script can be used to start the emulator:
 ```bash
 $ cd <project-root> # where you cloned this project
 $ ./startup.sh
+```
+Alternatively, you can use the [VirtualBox-based Vagrant](http://docs.vagrantup.com/v2/virtualbox) `Vagrantfile` to install and run both docker and
+the emulator with the following commands:
+```bash
+$ cd <project-root> # where you cloned this project
+$ vagrant up
+$ vagrant ssh
 ```
 Once started, you should see a running container for the emulator in your local docker environment:
 ```
