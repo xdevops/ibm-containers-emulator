@@ -89,11 +89,11 @@ If you prefer to use a UI instead of the REST interface, to control your contain
 
 For example, with the hello example from the previous section running, you should see the following at http://localhost:5000/v3/containers/groups:
 
-![groups screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/raw/master/images/groups.jpg)
+![groups screen](./groups.jpg)
 
 Here you can create new container groups, click on an existing container group to view or edit its properties, or click on the trashcan icon to delete a group and shutdown its associated containers. For example, if you click on the *hello_example* group you should see the following screen:
 
-![hello group screen](https://github.rtp.raleigh.ibm.com/frankb-ca/mock_ccsapi/raw/master/images/hello_group.jpg)
+![hello group screen](./hello_group.jpg)
 
 Try changing the number of instances to 3 and then press the **Save** button.
 
